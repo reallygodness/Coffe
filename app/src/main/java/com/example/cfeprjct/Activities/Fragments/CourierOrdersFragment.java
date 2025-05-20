@@ -11,13 +11,19 @@ import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.example.cfeprjct.Adapters.CourierOrdersAdapter;
+import com.example.cfeprjct.Entities.Address;
 import com.example.cfeprjct.Entities.Order;
 import com.example.cfeprjct.R;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import javax.annotation.Nullable;
 
@@ -26,6 +32,8 @@ public class CourierOrdersFragment extends Fragment {
     private RecyclerView recyclerView;
     private CourierOrdersAdapter adapter;
     private List<Order> ordersList = new ArrayList<>();
+    private Map<String, String> userNameMap = new HashMap<>();      // userId → ФИО
+    private Map<String, Address> addressMap = new HashMap<>();      // userId → Address
 
     @Nullable
     @Override
@@ -34,8 +42,8 @@ public class CourierOrdersFragment extends Fragment {
 
         recyclerView = view.findViewById(R.id.recyclerCourierOrders);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
-        adapter = new CourierOrdersAdapter(ordersList, order -> {
-            // обработка нажатия на "Взять заказ" (например, обновить статус и courierId)
+
+        adapter = new CourierOrdersAdapter(ordersList, userNameMap, addressMap, order -> {
             takeOrder(order);
         });
         recyclerView.setAdapter(adapter);
@@ -45,34 +53,83 @@ public class CourierOrdersFragment extends Fragment {
         return view;
     }
 
-
     private void loadOrders() {
-        // Загрузка заказов со статусом "Готов к доставке" (например, statusId = 2)
         FirebaseFirestore db = FirebaseFirestore.getInstance();
         db.collection("orders")
-                .whereEqualTo("statusId", 2)
+                .whereEqualTo("statusId", 2) // Статус "Готов к доставке"
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
                     ordersList.clear();
+                    Set<String> userIds = new HashSet<>();
                     for (QueryDocumentSnapshot doc : queryDocumentSnapshots) {
                         Order order = doc.toObject(Order.class);
-                        order.setOrderId(doc.getId());
+                        order.setFirestoreOrderId(doc.getId());
                         ordersList.add(order);
+                        if (order.getUserId() != null) userIds.add(order.getUserId());
                     }
-                    adapter.notifyDataSetChanged();
+                    loadUserNamesAndAddresses(new ArrayList<>(userIds));
                 })
                 .addOnFailureListener(e -> {
                     Toast.makeText(getContext(), "Ошибка загрузки заказов: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                 });
     }
 
+    // Загружаем имена и адреса всех клиентов для заказов
+    private void loadUserNamesAndAddresses(List<String> userIds) {
+        if (userIds.isEmpty()) {
+            adapter.setUserNameMap(userNameMap);
+            adapter.setAddressMap(addressMap);
+            adapter.notifyDataSetChanged();
+            return;
+        }
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        // Загружаем имена
+        db.collection("users")
+                .whereIn("userId", userIds)
+                .get()
+                .addOnSuccessListener(usersSnap -> {
+                    userNameMap.clear();
+                    for (QueryDocumentSnapshot doc : usersSnap) {
+                        String userId = doc.getString("userId");
+                        String firstName = doc.getString("firstName");
+                        String lastName = doc.getString("lastName");
+                        if (userId != null) {
+                            String fio = (firstName == null ? "" : firstName) + " " + (lastName == null ? "" : lastName);
+                            userNameMap.put(userId, fio.trim());
+                        }
+                    }
+                    // Загружаем адреса после имен
+                    db.collection("addresses")
+                            .whereIn("userId", userIds)
+                            .get()
+                            .addOnSuccessListener(addrSnap -> {
+                                addressMap.clear();
+                                for (QueryDocumentSnapshot doc : addrSnap) {
+                                    Address address = doc.toObject(Address.class);
+                                    addressMap.put(address.getUserId(), address);
+                                }
+                                adapter.setUserNameMap(userNameMap);
+                                adapter.setAddressMap(addressMap);
+                                adapter.notifyDataSetChanged();
+                            })
+                            .addOnFailureListener(e -> {
+                                adapter.setUserNameMap(userNameMap);
+                                adapter.setAddressMap(addressMap);
+                                adapter.notifyDataSetChanged();
+                            });
+                })
+                .addOnFailureListener(e -> {
+                    adapter.setUserNameMap(userNameMap);
+                    adapter.setAddressMap(addressMap);
+                    adapter.notifyDataSetChanged();
+                });
+    }
+
     private void takeOrder(Order order) {
-        // Пример: назначить courierId и поменять статус заказа на "В доставке" (statusId = 3)
-        // Здесь должен быть userId текущего курьера
         String courierId = getActivity().getIntent().getStringExtra("userId");
         FirebaseFirestore db = FirebaseFirestore.getInstance();
 
-        db.collection("orders").document(order.getOrderId())
+        db.collection("orders").document(order.getFirestoreOrderId())
                 .update("courierId", courierId, "statusId", 3)
                 .addOnSuccessListener(aVoid -> {
                     Toast.makeText(getContext(), "Заказ принят!", Toast.LENGTH_SHORT).show();

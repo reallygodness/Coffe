@@ -73,7 +73,7 @@ import com.example.cfeprjct.User;
                 CartItem.class,
                 Role.class
         },
-        version = 15,
+        version = 16,
         exportSchema = false
 )
 public abstract class AppDatabase extends RoomDatabase {
@@ -301,10 +301,12 @@ public abstract class AppDatabase extends RoomDatabase {
         }
     };
 
-    static final Migration MIGRATION_14_15 = new Migration(14, 15) {
+    static final Migration MIGRATION_14_16 = new Migration(14, 16) {
         @Override
         public void migrate(@NonNull SupportSQLiteDatabase db) {
             db.execSQL("CREATE TABLE IF NOT EXISTS roles (role_id INTEGER PRIMARY KEY NOT NULL, role_name TEXT)");
+            db.execSQL("ALTER TABLE `orders` ADD COLUMN `user_order_number` INTEGER NOT NULL DEFAULT 0");
+            db.execSQL("ALTER TABLE `orders` ADD COLUMN `firestoreOrderId` TEXT");
             db.execSQL("ALTER TABLE users ADD COLUMN role_id INTEGER NOT NULL DEFAULT 1");
             db.execSQL("INSERT OR IGNORE INTO roles (role_id, role_name) VALUES (1, 'user')");
         }
@@ -330,7 +332,7 @@ public abstract class AppDatabase extends RoomDatabase {
                             MIGRATION_11_12,
                             MIGRATION_12_13,
                             MIGRATION_13_14,
-                            MIGRATION_14_15
+                            MIGRATION_14_16
                     ).addCallback(new Callback() {
                         @Override
                         public void onCreate(@NonNull SupportSQLiteDatabase db) {

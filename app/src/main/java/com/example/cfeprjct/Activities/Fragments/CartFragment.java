@@ -399,11 +399,17 @@ public class CartFragment extends Fragment {
         float total = 100f;
         for (CartItem ci : items) total += ci.getQuantity() * ci.getUnitPrice();
 
+        String userId = AuthUtils.getLoggedInUserId(requireContext());
+        int lastOrderNum = orderDAO.getMaxUserOrderNumber(userId);
+        if (lastOrderNum < 0) lastOrderNum = 0;
+        int nextOrderNum = lastOrderNum + 1;
+
         Order order = new Order();
         order.setUserId(AuthUtils.getLoggedInUserId(requireContext()));
         order.setCreatedAt(now);
         order.setStatusId(cookId);
         order.setTotalPrice(total);
+        order.setUserOrderNumber(nextOrderNum);
         int orderId = (int)orderDAO.insertOrder(order);
 
         // Вставляем позиции в зависимости от типа
@@ -435,6 +441,50 @@ public class CartFragment extends Fragment {
                     break;
             }
         }
+
+        Map<String, Object> orderMap = new HashMap<>();
+        orderMap.put("userId", order.getUserId());
+        orderMap.put("userOrderNumber", order.getUserOrderNumber());
+        orderMap.put("createdAt", order.getCreatedAt());
+        orderMap.put("statusId", order.getStatusId());
+        orderMap.put("totalPrice", order.getTotalPrice());
+
+        Address address = addressDAO.getAddressByUserId(order.getUserId());
+        if (address != null) {
+            orderMap.put("address", address.getCity() + ", " + address.getStreet() + " " +
+                    address.getHouse() + (address.getApartment().isEmpty() ? "" : ", кв. " + address.getApartment()));
+        } else {
+            orderMap.put("address", ""); // если адрес не найден
+        }
+
+        firestore.collection("orders")
+                .add(orderMap)
+                .addOnSuccessListener(documentReference -> {
+                    String firestoreOrderId = documentReference.getId();
+                    // Сохраняем все позиции заказа в подколлекцию "ordered_items" Firestore
+                    for (CartItem ci : items) {
+                        Map<String, Object> itemMap = new HashMap<>();
+                        itemMap.put("productType", ci.getProductType());
+                        itemMap.put("productId", ci.getProductId());
+                        itemMap.put("title", ci.getTitle());
+                        itemMap.put("imageUrl", ci.getImageUrl());
+                        itemMap.put("size", ci.getSize());
+                        itemMap.put("unitPrice", ci.getUnitPrice());
+                        itemMap.put("quantity", ci.getQuantity());
+                        firestore.collection("orders")
+                                .document(firestoreOrderId)
+                                .collection("ordered_items")
+                                .add(itemMap);
+                    }
+                    // Можно здесь добавить post-процедуры (например, уведомление пользователя)
+                })
+                .addOnFailureListener(e -> {
+                    // Полная обработка ошибки
+                    new Handler(requireActivity().getMainLooper()).post(() -> {
+                        Toast.makeText(requireContext(),
+                                "Ошибка при сохранении заказа в облако: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                    });
+                });
 
         // Очищаем корзину локально и на сервере
         db.cartItemDao().clearAll();

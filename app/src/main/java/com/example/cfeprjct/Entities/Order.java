@@ -29,6 +29,8 @@ public class Order {
     @ColumnInfo(name = "user_order_number")
     private int userOrderNumber;
 
+    private String firestoreOrderId;
+
     // геттеры/сеттеры...
 
     public int getOrderId() { return orderId; }
@@ -46,6 +48,17 @@ public class Order {
     public long getCreatedAt() { return createdAt; }
     public void setCreatedAt(long createdAt) { this.createdAt = createdAt; }
 
+
+    public String getFirestoreOrderId() {
+        return firestoreOrderId;
+    }
+    public void setFirestoreOrderId(String firestoreOrderId) {
+        this.firestoreOrderId = firestoreOrderId;
+    }
+
+
     public int getUserOrderNumber() { return userOrderNumber; }
     public void setUserOrderNumber(int n) { this.userOrderNumber = n; }
+
+
 }
