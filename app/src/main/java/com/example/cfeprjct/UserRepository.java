@@ -17,17 +17,17 @@ import java.util.concurrent.Executors;
 public class UserRepository {
 
     private final AppDatabase db;
-    private final UserDAO     userDAO;
+    private final UserDAO     userDao;
     private final FirebaseFirestore firestore;
 
     public interface AuthCallback {
-        void onSuccess(String userId);
+        void onSuccess(User user);         // <-- теперь принимаем объект User
         void onFailure(String errorMessage);
     }
 
     public UserRepository(Context context) {
         db       = AppDatabase.getInstance(context.getApplicationContext());
-        userDAO  = db.userDAO();
+        userDao  = db.userDAO();
         firestore = FirebaseFirestore.getInstance();
     }
 
@@ -44,17 +44,15 @@ public class UserRepository {
                              AuthCallback callback) {
 
         new Thread(() -> {
-            // 1) Проверяем уникальность email и телефона в локальной БД
-            if (userDAO.getUserByEmail(email) != null) {
+            if (userDao.getUserByEmail(email) != null) {
                 callback.onFailure("Пользователь с таким email уже есть");
                 return;
             }
-            if (userDAO.getUserByPhoneNumber(phone) != null) {
+            if (userDao.getUserByPhoneNumber(phone) != null) {
                 callback.onFailure("Пользователь с таким номером уже есть");
                 return;
             }
 
-            // 2) Проверяем в Firestore
             firestore.collection("users")
                     .whereEqualTo("email", email)
                     .get()
@@ -75,7 +73,6 @@ public class UserRepository {
 
                                     // Если нигде не найдено — продолжаем регистрацию
                                     try {
-                                        // Хэшируем пароль
                                         byte[] salt = PasswordUtils.generateSalt();
                                         String hashedPassword = PasswordUtils.hashPassword(password, salt);
 
@@ -83,14 +80,13 @@ public class UserRepository {
                                         DocumentReference newUserRef = firestore.collection("users").document();
                                         String generatedId = newUserRef.getId();
 
-                                        // Создаём объект пользователя
+                                        // Создаём объект пользователя с ролью user (roleId = 1)
                                         User newUser = new User(firstName, lastName, email, phone, hashedPassword);
                                         newUser.setUserId(generatedId);
+                                        newUser.setRoleId(1); // <--- роль user
 
-                                        // Вставляем в Room в фоне
-                                        Executors.newSingleThreadExecutor().execute(() -> {
-                                            userDAO.insertUser(newUser);
-                                        });
+                                        // Вставляем в Room
+                                        new Thread(() -> userDao.insertUser(newUser)).start();
 
                                         // Готовим данные для Firestore
                                         Map<String, Object> userMap = new HashMap<>();
@@ -100,19 +96,21 @@ public class UserRepository {
                                         userMap.put("email", email);
                                         userMap.put("phoneNumber", phone);
                                         userMap.put("password", hashedPassword);
+                                        userMap.put("roleId", 1); // <--- роль user
+
                                         if (newUser.getProfileImage() != null) {
                                             String b64 = Base64.encodeToString(newUser.getProfileImage(), Base64.DEFAULT);
                                             userMap.put("profileImage", b64);
                                         }
-                                        // Сохраняем в Firestore
+
                                         newUserRef.set(userMap)
-                                                .addOnSuccessListener(aVoid -> callback.onSuccess(generatedId))
+                                                .addOnSuccessListener(aVoid -> callback.onSuccess(newUser))
                                                 .addOnFailureListener(e ->
                                                         callback.onFailure("Ошибка создания аккаунта в облаке: " + e.getMessage()));
-                                    } catch (NoSuchAlgorithmException | InvalidKeySpecException ex) {
+
+                                    } catch (Exception ex) {
                                         callback.onFailure("Ошибка хэширования пароля: " + ex.getMessage());
                                     }
-
                                 })
                                 .addOnFailureListener(e -> callback.onFailure("Ошибка проверки телефона: " + e.getMessage()));
                     })
@@ -128,11 +126,12 @@ public class UserRepository {
                           AuthCallback callback) {
         new Thread(() -> {
             // Локальная попытка
-            User local = userDAO.getUserByPhoneNumber(phoneNumber);
+            User local = userDao.getUserByPhoneNumber(phoneNumber);
             if (local != null) {
                 try {
                     if (PasswordUtils.verifyPassword(password, local.getPassword())) {
-                        callback.onSuccess(local.getUserId());
+                        if (local.getRoleId() == 0) local.setRoleId(1); // На всякий случай!
+                        callback.onSuccess(local);
                     } else {
                         callback.onFailure("Неверный номер или пароль");
                     }
@@ -141,7 +140,8 @@ public class UserRepository {
                 }
                 return;
             }
-            // Из облака
+
+            // Поиск в Firestore
             firestore.collection("users")
                     .whereEqualTo("phoneNumber", phoneNumber)
                     .get()
@@ -166,27 +166,29 @@ public class UserRepository {
                                 cloudUser.setEmail(snapshot.getString("email"));
                                 cloudUser.setPhoneNumber(phoneNumber);
                                 cloudUser.setPassword(storedHash);
+
+                                // Получаем roleId из Firestore (или по умолчанию 1)
+                                Long role = snapshot.getLong("roleId");
+                                cloudUser.setRoleId(role != null ? role.intValue() : 1);
+
                                 String pi = snapshot.getString("profileImage");
                                 if (pi != null) {
-                                    cloudUser.setProfileImage(
-                                            Base64.decode(pi, Base64.DEFAULT)
-                                    );
+                                    cloudUser.setProfileImage(Base64.decode(pi, Base64.DEFAULT));
                                 }
+
                                 // Сохраняем локально
-                                new Thread(() -> {
-                                    userDAO.insertUser(cloudUser);
-                                    callback.onSuccess(cloudUser.getUserId());
-                                }).start();
+                                new Thread(() -> userDao.insertUser(cloudUser)).start();
+
+                                callback.onSuccess(cloudUser);
+
                             } catch (Exception ex) {
                                 callback.onFailure("Ошибка проверки пароля: " + ex.getMessage());
                             }
                         }).addOnFailureListener(e ->
-                                callback.onFailure("Ошибка чтения из облака: " + e.getMessage())
-                        );
+                                callback.onFailure("Ошибка чтения из облака: " + e.getMessage()));
                     })
                     .addOnFailureListener(e ->
-                            callback.onFailure("Ошибка соединения: " + e.getMessage())
-                    );
+                            callback.onFailure("Ошибка соединения: " + e.getMessage()));
         }).start();
     }
 }

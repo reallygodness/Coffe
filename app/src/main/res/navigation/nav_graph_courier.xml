@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/nav_graph_courier"
+    app:startDestination="@id/navigation_courier_orders">
+
+    <fragment
+        android:id="@+id/navigation_courier_profile"
+        android:name="com.example.cfeprjct.Activities.Fragments.ProfileFragment"
+        android:label="Профиль"
+        tools:layout="@layout/fragment_profile" />
+
+    <fragment
+        android:id="@+id/navigation_courier_orders"
+        android:name="com.example.cfeprjct.Activities.Fragments.CourierOrdersFragment"
+        android:label="Заказы"
+        tools:layout="@layout/fragment_courier_orders" />
+
+</navigation>

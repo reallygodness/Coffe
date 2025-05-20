@@ -72,7 +72,6 @@ public class LoginActivity extends AppCompatActivity {
     public void login(View view) {
         // Получаем номер телефона (оставляем только цифры)
         String phoneNumber = phoneEditText.getText().toString().trim().replaceAll("\\D", "");
-        // Получаем пароль
         String password = passwordEditText.getText().toString().trim();
 
         if (phoneNumber.isEmpty() || password.isEmpty()) {
@@ -88,14 +87,22 @@ public class LoginActivity extends AppCompatActivity {
         new Thread(() -> {
             userRepository.loginUser(phoneNumber, password, new UserRepository.AuthCallback() {
                 @Override
-                public void onSuccess(String userId) {
+                public void onSuccess(com.example.cfeprjct.User user) {
                     // Сохраняем состояние входа по userId
-                    AuthUtils.setLoggedIn(LoginActivity.this, true, userId);
+                    AuthUtils.setLoggedIn(LoginActivity.this, true, user.getUserId());
+
                     runOnUiThread(() -> {
                         Toast.makeText(LoginActivity.this, "Вход выполнен!", Toast.LENGTH_SHORT).show();
+
                         // Передаём userId в MainActivity для загрузки данных пользователя по ключу
-                        Intent intent = new Intent(LoginActivity.this, MainActivity.class);
-                        intent.putExtra("userId", userId);
+                        Intent intent;
+                        // Если у вас есть логика для курьера — откройте CourierMainActivity:
+                        if (user.getRoleId() == 2) {
+                            intent = new Intent(LoginActivity.this, CourierMainActivity.class);
+                        } else {
+                            intent = new Intent(LoginActivity.this, MainActivity.class);
+                        }
+                        intent.putExtra("userId", user.getUserId());
                         startActivity(intent);
                         finish();
                     });

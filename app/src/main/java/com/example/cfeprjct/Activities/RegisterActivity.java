@@ -175,14 +175,23 @@ public class RegisterActivity extends AppCompatActivity {
         // и обратный вызов (AuthCallback)
         userRepository.registerUser(firstName, lastName, email, phoneNumber, password, new UserRepository.AuthCallback() {
             @Override
-            public void onSuccess(String userId) {
+            public void onSuccess(com.example.cfeprjct.User user) { // исправили сигнатуру!
                 runOnUiThread(() -> {
                     Toast.makeText(RegisterActivity.this, "Регистрация успешна!", Toast.LENGTH_SHORT).show();
-                    Intent intent = new Intent(RegisterActivity.this, LoginActivity.class);
+                    // Можно сразу делать автологин, если нужно
+                    // или переводить в MainActivity (или CourierMainActivity) в зависимости от роли:
+                    Intent intent;
+                    if (user.getRoleId() == 2) {
+                        intent = new Intent(RegisterActivity.this, CourierMainActivity.class);
+                    } else {
+                        intent = new Intent(RegisterActivity.this, LoginActivity.class);
+                    }
+                    intent.putExtra("userId", user.getUserId());
                     startActivity(intent);
                     finish();
                 });
             }
+
             @Override
             public void onFailure(String errorMessage) {
                 runOnUiThread(() ->

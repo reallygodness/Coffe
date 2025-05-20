@@ -12,7 +12,9 @@ import androidx.work.WorkManager;
 
 import com.example.cfeprjct.Sync.CatalogSync;
 import com.example.cfeprjct.Sync.SyncUserWorker;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.WriteBatch;
 
 import java.io.ByteArrayOutputStream;
 import java.util.HashMap;
@@ -31,6 +33,7 @@ public class MyApp extends Application {
         OneTimeWorkRequest syncReq = new OneTimeWorkRequest.Builder(SyncUserWorker.class)
                 .build();
         WorkManager.getInstance(this).enqueue(syncReq);
+
     }
 
 }

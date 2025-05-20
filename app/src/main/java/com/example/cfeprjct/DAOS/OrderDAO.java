@@ -27,5 +27,8 @@ public interface OrderDAO {
     @Query("DELETE FROM orders")
     void clearAll();
 
+    @Query("SELECT MAX(user_order_number) FROM orders WHERE userId = :userId")
+    int getMaxUserOrderNumber(String userId);
+
 
 }

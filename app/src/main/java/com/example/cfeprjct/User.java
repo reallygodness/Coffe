@@ -1,6 +1,7 @@
 package com.example.cfeprjct;
 
 import androidx.annotation.NonNull;
+import androidx.room.ColumnInfo;
 import androidx.room.Entity;
 import androidx.room.Ignore;
 import androidx.room.PrimaryKey;
@@ -19,6 +20,9 @@ public class User {
     private String resetCode;
     private String password;  // для хранения пароля
     private byte[] profileImage;
+
+    @ColumnInfo(name = "role_id", defaultValue = "1")
+    public int roleId = 1; // по умолчанию user
 
     // Основной конструктор, который будет использоваться Room
     public User(@NonNull String userId, String firstName, String lastName, String email, String phoneNumber) {
@@ -99,4 +103,7 @@ public class User {
     public void setProfileImage(byte[] profileImage) {
         this.profileImage = profileImage;
     }
+
+    public int getRoleId() { return roleId; }
+    public void setRoleId(int roleId) { this.roleId = roleId; }
 }

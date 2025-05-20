@@ -1,5 +1,6 @@
 package com.example.cfeprjct.Entities;
 
+import androidx.room.ColumnInfo;
 import androidx.room.Entity;
 import androidx.room.ForeignKey;
 import androidx.room.PrimaryKey;
@@ -25,6 +26,9 @@ public class Order {
 
     private long createdAt;
 
+    @ColumnInfo(name = "user_order_number")
+    private int userOrderNumber;
+
     // геттеры/сеттеры...
 
     public int getOrderId() { return orderId; }
@@ -41,4 +45,7 @@ public class Order {
 
     public long getCreatedAt() { return createdAt; }
     public void setCreatedAt(long createdAt) { this.createdAt = createdAt; }
+
+    public int getUserOrderNumber() { return userOrderNumber; }
+    public void setUserOrderNumber(int n) { this.userOrderNumber = n; }
 }
