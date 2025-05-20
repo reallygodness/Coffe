@@ -1,0 +1,4 @@
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:alpha="0.2" android:color="#C67C4E"/> <!-- Основной цвет с прозрачностью -->
+    <item android:alpha="0.3" android:color="#99C67C4E"/> <!-- Второй цвет с большей прозрачностью -->
+</selector>

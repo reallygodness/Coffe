@@ -1,0 +1,28 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Base application theme. -->
+    <style name="Theme.CfePrjct" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <!-- Основные цвета -->
+        <item name="colorPrimary">#C67C4E</item>
+        <item name="colorPrimaryVariant">#B36D3F</item>
+        <item name="colorSecondary">#3E3E3E</item> <!-- Затемнённая вторичная кнопка -->
+
+        <!-- Цвета текста и фона -->
+        <item name="android:windowBackground">#121212</item>
+        <item name="android:textColorPrimary">#FFFFFFFF</item>
+
+        <!-- Кастомные кнопки -->
+        <item name="buttonStyle">@style/Widget.CoffeeApp.Button</item>
+    </style>
+
+    <!-- Оранжевая кнопка -->
+    <style name="Widget.CoffeeApp.Button" parent="Widget.MaterialComponents.Button">
+        <item name="android:background">@drawable/button_rounded</item>
+        <item name="android:textColor">#FFFFFFFF</item>
+    </style>
+
+    <!-- Серая кнопка -->
+    <style name="Widget.CoffeeApp.Button.Gray" parent="Widget.MaterialComponents.Button">
+        <item name="android:background">@drawable/button_rounded_gray</item>
+        <item name="android:textColor">#FF000000</item>
+    </style>
+</resources>

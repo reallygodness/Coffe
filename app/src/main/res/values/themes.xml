@@ -1,0 +1,45 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Base application theme. -->
+    <style name="Theme.CfePrjct" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <!-- Основные цвета -->
+        <!-- Основные цвета -->
+        <item name="colorPrimary">#C67C4E</item>
+        <item name="colorPrimaryVariant">#B36D3F</item>
+        <item name="colorSecondary">#F2EDE8</item>
+
+        <!-- Цвета текста и фона -->
+        <item name="android:windowBackground">#F9F9F9</item>
+        <item name="android:textColorPrimary">#FF000000</item>
+
+
+        <!-- Кастомные кнопки -->
+        <item name="buttonStyle">@style/Widget.CoffeeApp.Button</item>
+        <item name="editTextStyle">@style/EditTextStyle</item>
+<!--        <item name="android:statusBarColor">@android:color/transparent</item>-->
+<!--        <item name="android:windowTranslucentStatus">true</item>-->
+        <item name="android:statusBarColor">@color/black</item>
+        <item name="android:windowLightStatusBar">false</item>
+
+        <item name="android:fontFamily">@font/fontregular</item>
+        <item name="fontFamily">@font/fontregular</item>
+
+    </style>
+
+    <!-- Оранжевая кнопка -->
+    <style name="Widget.CoffeeApp.Button" parent="Widget.MaterialComponents.Button">
+        <item name="android:background">@drawable/button_rounded</item>
+        <item name="android:textColor">#FFFFFFFF</item>
+    </style>
+
+    <style name="EditTextStyle" parent="Widget.AppCompat.EditText">
+        <item name="android:textCursorDrawable">@null</item>
+        <item name="android:textColor">@color/black</item>
+        <item name="android:textColorHint">@color/black</item>
+    </style>
+
+    <!-- Серая кнопка -->
+    <style name="Widget.CoffeeApp.Button.Gray" parent="Widget.MaterialComponents.Button">
+        <item name="android:background">@drawable/button_rounded_gray</item>
+        <item name="android:textColor">#FF000000</item>
+    </style>
+</resources>

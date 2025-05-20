@@ -1,0 +1,44 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:background="@color/background_white"
+    android:padding="20dp">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Введите код подтверждения"
+        android:textSize="22sp"
+        android:textStyle="bold"
+        android:fontFamily="@font/fontbold"
+        android:textColor="#000000"
+        android:gravity="center"
+        android:layout_marginBottom="24dp"/>
+
+    <EditText
+        android:id="@+id/codeEditText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textColor="@color/black"
+        android:background="@drawable/edit_text_bg"
+        android:hint="Введите код"
+        android:padding="16dp"
+        android:textColorHint="#9B6B43"
+        android:inputType="number" />
+
+    <Button
+        android:id="@+id/verifyButton"
+        android:layout_marginTop="20dp"
+        android:layout_width="match_parent"
+        android:textAllCaps="false"
+        android:padding="12dp"
+        android:textColor="@color/white"
+        android:textSize="18sp"
+        android:layout_height="wrap_content"
+        android:background="@drawable/button_rounded"
+        app:backgroundTint="@null"
+        android:text="Подтвердить код" />
+</LinearLayout>

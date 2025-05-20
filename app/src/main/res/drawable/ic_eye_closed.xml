@@ -1,0 +1,19 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+
+    <!-- Форма глаза -->
+    <path
+        android:fillColor="#9B6B43"
+        android:pathData="M12 4C7 4 3 8 2 12c1 4 5 8 10 8s9-4 10-8c-1-4-5-8-10-8zm0 12a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm0-6.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5z"/>
+
+    <!-- Перечеркивающая линия -->
+    <path
+        android:strokeColor="#9B6B43"
+        android:strokeWidth="2"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M3 3L21 21"/>
+</vector>

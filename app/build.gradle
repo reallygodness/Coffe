@@ -1,0 +1,82 @@
+plugins {
+    alias(libs.plugins.android.application)
+    alias(libs.plugins.gms)
+}
+
+android {
+    namespace 'com.example.cfeprjct'
+    compileSdk 35
+
+    defaultConfig {
+        applicationId "com.example.cfeprjct"
+        minSdk 24
+        targetSdk 35
+        versionCode 1
+        versionName "1.0"
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    task wrapper(type: Wrapper){
+        gradleVersion = '7.2'
+    }
+    task prepareKotlinBuildScriptModel {
+
+    }
+
+    packagingOptions {
+        exclude 'META-INF/NOTICE.md'
+        exclude 'META-INF/LICENSE.md'
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
+    }
+}
+
+dependencies {
+    implementation 'com.google.firebase:firebase-firestore:25.1.3'
+    implementation 'androidx.room:room-runtime:2.6.1'
+
+    implementation platform('com.google.firebase:firebase-bom:33.12.0')
+    implementation 'com.google.firebase:firebase-analytics'
+    implementation 'com.google.firebase:firebase-auth:23.2.0'
+
+    implementation 'androidx.work:work-runtime:2.8.1'
+
+    implementation "com.google.android.gms:play-services-location:21.0.1"
+
+
+    implementation 'com.github.bumptech.glide:glide:4.12.0'
+    implementation libs.swiperefreshlayout
+    annotationProcessor 'com.github.bumptech.glide:compiler:4.12.0'
+
+    implementation 'com.google.android.material:material:1.8.0'
+
+
+//    implementation 'com.squareup.retrofit2:retrofit:2.9.0'
+//    implementation 'com.squareup.retrofit2:converter-gson:2.9.0'
+
+    implementation 'com.sun.mail:android-mail:1.6.7'
+    implementation 'com.sun.mail:android-activation:1.6.7'
+
+    implementation libs.activity
+    implementation platform(libs.firebase.bom)
+    implementation (libs.firebase.firestore)
+    implementation libs.constraintlayout
+    annotationProcessor 'androidx.room:room-compiler:2.6.1'  // Для генерации кода
+    implementation 'androidx.lifecycle:lifecycle-livedata-ktx:2.8.7'  // Для использования LiveData (если потребуется)
+    implementation 'androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.7'  // Для использования ViewModel (если потребуется)
+    implementation libs.appcompat
+    implementation libs.material
+    testImplementation libs.junit
+    androidTestImplementation libs.ext.junit
+    androidTestImplementation libs.espresso.core
+}
+

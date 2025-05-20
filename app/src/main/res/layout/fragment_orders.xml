@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:padding="16dp"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rvOrders"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"/>
+
+    <TextView
+        android:id="@+id/tvEmptyOrders"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Вы ещё не осуществляли заказ"
+        android:gravity="center"
+        android:visibility="gone"
+        android:textSize="18sp"
+        android:textColor="@color/gray"
+        android:padding="16dp"/>
+</LinearLayout>

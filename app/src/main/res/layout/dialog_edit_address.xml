@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:padding="16dp"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+    <EditText
+        android:id="@+id/etCity"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Город"/>
+    <EditText
+        android:id="@+id/etStreet"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Улица"/>
+    <EditText
+        android:id="@+id/etHouse"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Дом"/>
+    <EditText
+        android:id="@+id/etApartment"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Квартира"/>
+</LinearLayout>

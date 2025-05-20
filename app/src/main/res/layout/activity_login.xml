@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:padding="24dp"
+    android:background="@color/white">
+
+    <ImageView
+        android:layout_width="273dp"
+        android:layout_height="228dp"
+        android:layout_marginTop="-50dp"
+        android:layout_marginBottom="-20dp"
+        android:contentDescription="Coffee Image"
+        android:scaleType="fitCenter"
+        android:src="@drawable/coffee" />
+
+    <EditText
+        android:id="@+id/phoneNumber"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:hint="Номер телефона"
+        android:background="@drawable/edit_text_bg"
+        android:padding="16dp"
+        android:textColorHint="#9B6B43"
+        android:textSize="16sp"
+        android:textColor="@color/black"
+        android:layout_marginTop="12dp"/>
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:layout_marginTop="12dp">
+
+        <EditText
+            android:id="@+id/password"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:hint="Пароль"
+            android:background="@drawable/edit_text_bg"
+            android:padding="16dp"
+            android:textColorHint="#9B6B43"
+            android:textSize="16sp"
+            android:textColor="@color/black"
+            android:inputType="textPassword"/>
+
+        <ImageView
+            android:id="@+id/togglePassword"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true"
+            android:layout_marginEnd="16dp"
+            android:src="@drawable/ic_eye_closed"
+            android:contentDescription="Toggle password visibility"/>
+    </RelativeLayout>
+
+    <TextView
+        android:id="@+id/forgotpassword"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/forgot_pass"
+        android:textSize="14sp"
+        android:layout_marginStart="3dp"
+        android:textColor="#9B6B43"
+        android:fontFamily="@font/fontregular"
+        android:layout_marginTop="10dp"
+        android:gravity="start"
+        android:layout_gravity="start"/>
+
+    <Button
+        android:id="@+id/btnlogin"
+        android:layout_marginTop="24dp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textAllCaps="false"
+        android:background="@drawable/button_rounded"
+        android:clickable="true"
+        android:focusable="true"
+        android:padding="12dp"
+        android:text="Войти"
+        android:onClick="login"
+        android:textColor="@color/white"
+        android:textSize="18sp"
+        app:backgroundTint="@null" />
+
+    <Button
+        android:id="@+id/btnreg"
+        android:layout_marginTop="24dp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textAllCaps="false"
+        android:background="@drawable/button_rounded_gray"
+        android:clickable="true"
+        android:focusable="true"
+        android:padding="12dp"
+        android:text="Зарегистрироваться"
+        android:textColor="@color/black"
+        android:textSize="18sp"
+        app:backgroundTint="@null" />
+
+</LinearLayout>

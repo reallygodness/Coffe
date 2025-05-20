@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:background="@color/white"
+    android:padding="16dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center_horizontal">
+
+        <!-- Заголовок -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Профиль"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:fontFamily="@font/fontregular"
+            android:textColor="@color/black"
+            android:layout_marginBottom="16dp"/>
+
+        <!-- Фото профиля -->
+        <ImageView
+            android:id="@+id/profileImageView"
+            android:layout_width="200dp"
+            android:layout_height="200dp"
+            android:scaleType="centerCrop"
+            android:background="@drawable/grayprofile"
+            android:layout_marginBottom="16dp"/>
+
+        <!-- Имя пользователя -->
+        <TextView
+            android:id="@+id/firstNameTextView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:hint="Имя"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:fontFamily="@font/fontregular"
+            android:textColor="@color/black"
+            android:layout_marginBottom="4dp"/>
+
+        <!-- Username -->
+        <TextView
+            android:hint="Фамилия"
+            android:id="@+id/lastNameTextView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="14sp"
+            android:textColor="@color/gray"
+            android:layout_marginBottom="4dp"/>
+
+        <!-- Email -->
+        <TextView
+            android:id="@+id/emailTextView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:hint="email"
+            android:textSize="14sp"
+            android:textColor="@color/gray"
+            android:layout_marginBottom="4dp"/>
+
+        <!-- Телефон -->
+        <TextView
+            android:id="@+id/phoneNumberTextView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:hint="Номер телефона"
+            android:textSize="14sp"
+            android:textColor="@color/gray"
+            android:layout_marginBottom="16dp"/>
+
+        <!-- Кнопка "Edit Profile" -->
+        <Button
+            android:id="@+id/editProfileButton"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:text="Редактировать"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:textAllCaps="false"
+            android:fontFamily="@font/fontregular"
+            android:textColor="@color/white"
+            app:backgroundTint="@null"
+            android:onClick="editProfile"
+            android:background="@drawable/button_rounded"
+            android:layout_marginBottom="8dp"/>
+
+        <EditText
+            android:id="@+id/firstNameEditText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Имя"
+            android:textSize="18sp"
+            android:visibility="gone"
+            android:paddingBottom="8dp" />
+
+        <EditText
+            android:id="@+id/lastNameEditText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Фамилия"
+            android:textSize="18sp"
+            android:visibility="gone"
+            android:paddingBottom="8dp" />
+
+        <EditText
+            android:id="@+id/emailEditText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Email"
+            android:textSize="18sp"
+            android:visibility="gone"
+            android:paddingBottom="8dp" />
+
+        <EditText
+            android:id="@+id/phoneNumberEditText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:maxLength="11"
+            android:hint="Номер телефона"
+            android:textSize="18sp"
+            android:visibility="gone"
+            android:paddingBottom="8dp" />
+
+        <!-- Кнопка "Logout" -->
+        <Button
+            android:id="@+id/logoutButton"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:text="Выйти"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:textAllCaps="false"
+            android:fontFamily="@font/fontregular"
+            android:background="@drawable/button_rounded_gray"
+            android:textColor="@color/black"
+            android:onClick="logout"
+            app:backgroundTint="@null"/>
+
+    </LinearLayout>
+</ScrollView>

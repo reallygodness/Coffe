@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#FFFFFF"
+    android:gravity="center"
+    android:orientation="vertical"
+    android:padding="24dp">
+
+    <!-- Логотип / Изображение кофе -->
+    <ImageView
+        android:layout_width="393dp"
+        android:layout_height="367dp"
+        android:layout_marginTop="-50dp"
+        android:layout_marginBottom="-50dp"
+        android:contentDescription="Coffee Image"
+        android:scaleType="fitCenter"
+        android:src="@drawable/coffee" />
+
+    <TextView
+        android:layout_width="353dp"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="14dp"
+        android:gravity="center"
+        android:text="Одно из самых вкусных кофе в городе!"
+        android:textColor="@color/black"
+        android:textSize="34sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:layout_width="293dp"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="32dp"
+        android:gravity="center"
+        android:text="Свежие зёрна, настоящая арабика и бережная обжарка"
+        android:textColor="@color/gray"
+        android:textSize="16sp" />
+
+    <!-- Кнопка "Начать" -->
+    <Button
+        android:id="@+id/buttonStart"
+        android:layout_width="280dp"
+        android:layout_height="wrap_content"
+        android:background="@drawable/button_rounded"
+        android:padding="12dp"
+        android:text="Начать"
+        android:textColor="@color/white"
+        android:clickable="true"
+        android:focusable="true"
+        android:textSize="18sp"
+        app:backgroundTint="@null" />
+</LinearLayout>
