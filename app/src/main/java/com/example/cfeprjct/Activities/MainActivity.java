@@ -1,6 +1,7 @@
 package com.example.cfeprjct.Activities;
 
 import android.annotation.SuppressLint;
+import android.content.Intent;
 import android.os.Bundle;
 
 import androidx.activity.EdgeToEdge;
@@ -12,6 +13,7 @@ import com.example.cfeprjct.Activities.Fragments.CatalogFragment;
 import com.example.cfeprjct.Activities.Fragments.CartFragment;
 import com.example.cfeprjct.Activities.Fragments.OrdersFragment;
 import com.example.cfeprjct.Activities.Fragments.ProfileFragment;
+import com.example.cfeprjct.AuthUtils;
 import com.example.cfeprjct.R;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
@@ -22,6 +24,21 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         // Отключаем ночной режим
         AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
+
+        // ---------- ДО setContentView: проверяем роль ----------
+        int roleId = AuthUtils.getLoggedInRoleId(this);
+        String userId = AuthUtils.getLoggedInUserId(this);
+
+        if (roleId == 2) {
+            // Это курьер — открываем CourierMainActivity
+            Intent intent = new Intent(this, CourierMainActivity.class);
+            intent.putExtra("userId", userId);
+            startActivity(intent);
+            finish();
+            return;
+        }
+        // ------------------------------------------------------
+
         super.onCreate(savedInstanceState);
 
         // Edge-to-edge

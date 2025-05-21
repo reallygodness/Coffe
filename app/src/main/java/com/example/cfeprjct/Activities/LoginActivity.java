@@ -70,7 +70,6 @@ public class LoginActivity extends AppCompatActivity {
 
     // Метод для авторизации: пользователь вводит номер телефона и пароль
     public void login(View view) {
-        // Получаем номер телефона (оставляем только цифры)
         String phoneNumber = phoneEditText.getText().toString().trim().replaceAll("\\D", "");
         String password = passwordEditText.getText().toString().trim();
 
@@ -88,15 +87,13 @@ public class LoginActivity extends AppCompatActivity {
             userRepository.loginUser(phoneNumber, password, new UserRepository.AuthCallback() {
                 @Override
                 public void onSuccess(com.example.cfeprjct.User user) {
-                    // Сохраняем состояние входа по userId
-                    AuthUtils.setLoggedIn(LoginActivity.this, true, user.getUserId());
+                    // --- ВАЖНО: Сохраняем и userId, и roleId ---
+                    AuthUtils.setLoggedIn(LoginActivity.this, true, user.getUserId(), user.getRoleId());
 
                     runOnUiThread(() -> {
                         Toast.makeText(LoginActivity.this, "Вход выполнен!", Toast.LENGTH_SHORT).show();
 
-                        // Передаём userId в MainActivity для загрузки данных пользователя по ключу
                         Intent intent;
-                        // Если у вас есть логика для курьера — откройте CourierMainActivity:
                         if (user.getRoleId() == 2) {
                             intent = new Intent(LoginActivity.this, CourierMainActivity.class);
                         } else {

@@ -11,15 +11,20 @@ public class AuthUtils {
     private static final String KEY_IS_LOGGED_IN = "is_logged_in";
     private static final String KEY_USER_ID = "user_Id"; // Храним только userId
 
+    private static final String KEY_ROLE_ID = "role_Id";
+
+
     // Сохраняем состояние входа и userId
-    public static void setLoggedIn(Context context, boolean isLoggedIn, String userId) {
+    public static void setLoggedIn(Context context, boolean isLoggedIn, String userId, int roleId) {
         SharedPreferences sharedPreferences = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPreferences.edit();
         editor.putBoolean(KEY_IS_LOGGED_IN, isLoggedIn);
         if (isLoggedIn) {
             editor.putString(KEY_USER_ID, userId);
+            editor.putInt(KEY_ROLE_ID, roleId); // сохраняем роль!
         } else {
             editor.remove(KEY_USER_ID);
+            editor.remove(KEY_ROLE_ID);
         }
         editor.apply();
     }
@@ -28,6 +33,11 @@ public class AuthUtils {
     public static String getLoggedInUserId(Context context) {
         return context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
                 .getString(KEY_USER_ID, null);
+    }
+
+    public static int getLoggedInRoleId(Context context) {
+        return context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+                .getInt(KEY_ROLE_ID, 1); // 1 — пользователь по умолчанию
     }
 
     // Проверяем, авторизован ли пользователь

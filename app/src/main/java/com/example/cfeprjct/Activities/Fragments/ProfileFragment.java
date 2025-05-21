@@ -326,7 +326,7 @@ public class ProfileFragment extends Fragment {
     }
 
     private void logout() {
-        AuthUtils.setLoggedIn(requireContext(), false, null);
+        AuthUtils.clearLogin(requireContext());
         Intent intent = new Intent(requireContext(), WelcomeActivity.class);
         startActivity(intent);
         requireActivity().finish();
