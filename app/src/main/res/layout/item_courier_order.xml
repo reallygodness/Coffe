@@ -43,14 +43,50 @@
         android:text="Сумма заказа: 250 ₽"
         android:textSize="16sp"
         android:textColor="#444444"
-        android:layout_marginBottom="12dp" />
+        android:layout_marginBottom="8dp" />
 
+    <!-- Новый элемент: Статус заказа -->
+    <TextView
+        android:id="@+id/textOrderStatus"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Статус: В готовке"
+        android:textSize="15sp"
+        android:textColor="#757575"
+        android:layout_marginBottom="2dp"
+        android:visibility="visible" />
+
+    <!-- Новый элемент: Таймер (5 или 20 минут) -->
+    <TextView
+        android:id="@+id/textOrderTimer"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="05:00"
+        android:textStyle="bold"
+        android:textSize="18sp"
+        android:textColor="#D2691E"
+        android:layout_marginBottom="8dp"
+        android:visibility="gone" />
+
+    <!-- Кнопка "Взять заказ" -->
     <Button
         android:id="@+id/btnTakeOrder"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Взять заказ"
         android:background="@drawable/button_rounded"
-        android:textColor="@color/white" />
+        android:textColor="@color/white"
+        android:layout_marginBottom="8dp"
+        android:visibility="gone" />
+
+    <!-- Новый элемент: Кнопка "Доставлен" -->
+    <Button
+        android:id="@+id/btnDelivered"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Доставлен"
+        android:background="@drawable/button_rounded"
+        android:textColor="@color/white"
+        android:visibility="gone" />
 
 </LinearLayout>

@@ -73,7 +73,7 @@ import com.example.cfeprjct.User;
                 CartItem.class,
                 Role.class
         },
-        version = 16,
+        version = 17,
         exportSchema = false
 )
 public abstract class AppDatabase extends RoomDatabase {
@@ -313,6 +313,22 @@ public abstract class AppDatabase extends RoomDatabase {
     };
 
 
+    static final Migration MIGRATION_16_17 = new Migration(16, 17) {
+        @Override
+        public void migrate(@NonNull SupportSQLiteDatabase database) {
+            // Добавляем поле для ID курьера
+            database.execSQL("ALTER TABLE `orders` ADD COLUMN `courierId` TEXT");
+            // Добавляем поле для времени взятия заказа курьером
+            database.execSQL("ALTER TABLE `orders` ADD COLUMN `courierTakeTime` INTEGER");
+            // Добавляем поле для времени начала доставки
+            database.execSQL("ALTER TABLE `orders` ADD COLUMN `deliveryStartTime` INTEGER");
+            // Добавляем поле для времени завершения доставки
+            database.execSQL("ALTER TABLE `orders` ADD COLUMN `deliveredTime` INTEGER");
+        }
+    };
+
+
+
 
     public static synchronized AppDatabase getInstance(Context context) {
         if (instance == null) {
@@ -332,7 +348,8 @@ public abstract class AppDatabase extends RoomDatabase {
                             MIGRATION_11_12,
                             MIGRATION_12_13,
                             MIGRATION_13_14,
-                            MIGRATION_14_16
+                            MIGRATION_14_16,
+                            MIGRATION_16_17
                     ).addCallback(new Callback() {
                         @Override
                         public void onCreate(@NonNull SupportSQLiteDatabase db) {

@@ -1,6 +1,7 @@
 package com.example.cfeprjct.Activities.Fragments;
 
 import android.os.Bundle;
+import android.os.Handler;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -32,8 +33,9 @@ public class CourierOrdersFragment extends Fragment {
     private RecyclerView recyclerView;
     private CourierOrdersAdapter adapter;
     private List<Order> ordersList = new ArrayList<>();
-    private Map<String, String> userNameMap = new HashMap<>();      // userId → ФИО
-    private Map<String, Address> addressMap = new HashMap<>();      // userId → Address
+    private Map<String, String> userNameMap = new HashMap<>();
+    private Map<String, Address> addressMap = new HashMap<>();
+    private String courierId;
 
     @Nullable
     @Override
@@ -43,12 +45,25 @@ public class CourierOrdersFragment extends Fragment {
         recyclerView = view.findViewById(R.id.recyclerCourierOrders);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
 
-        adapter = new CourierOrdersAdapter(ordersList, userNameMap, addressMap, order -> {
-            takeOrder(order);
+        courierId = getActivity().getIntent().getStringExtra("userId");
+
+        adapter = new CourierOrdersAdapter(ordersList, userNameMap, addressMap, new CourierOrdersAdapter.OnTakeOrderClickListener() {
+            @Override
+            public void onTakeOrder(Order order) {
+                takeOrder(order);
+            }
+
+            @Override
+            public void onDelivered(Order order) {
+                markOrderAsDelivered(order);
+            }
         });
+        adapter.setCourierId(courierId);
         recyclerView.setAdapter(adapter);
 
         loadOrders();
+
+        new Handler().postDelayed(this::loadOrders, 30000);
 
         return view;
     }
@@ -56,25 +71,37 @@ public class CourierOrdersFragment extends Fragment {
     private void loadOrders() {
         FirebaseFirestore db = FirebaseFirestore.getInstance();
         db.collection("orders")
-                .whereEqualTo("statusId", 2) // Статус "Готов к доставке"
+                .whereIn("statusId", List.of(1, 2)) // только "В готовке" и "В доставке"
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
                     ordersList.clear();
                     Set<String> userIds = new HashSet<>();
+                    long now = System.currentTimeMillis();
                     for (QueryDocumentSnapshot doc : queryDocumentSnapshots) {
+                        // ... [твой парсинг order, setOrderId, setFirestoreOrderId и т.д.]
                         Order order = doc.toObject(Order.class);
+                        order.setOrderId(Integer.parseInt(doc.getId()));
                         order.setFirestoreOrderId(doc.getId());
-                        ordersList.add(order);
+
+                        // Только активные:
+                        // "В готовке" — свободные или взятые этим курьером
+                        if (order.getStatusId() == 1 &&
+                                ((order.getCourierId() == null || order.getCourierId().isEmpty()) ||
+                                        courierId.equals(order.getCourierId()))) {
+                            ordersList.add(order);
+                        }
+                        // "В доставке" только свои заказы
+                        else if (order.getStatusId() == 2 && courierId.equals(order.getCourierId())) {
+                            ordersList.add(order);
+                        }
+                        // Всё остальное не добавляем!
                         if (order.getUserId() != null) userIds.add(order.getUserId());
                     }
                     loadUserNamesAndAddresses(new ArrayList<>(userIds));
-                })
-                .addOnFailureListener(e -> {
-                    Toast.makeText(getContext(), "Ошибка загрузки заказов: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                 });
+
     }
 
-    // Загружаем имена и адреса всех клиентов для заказов
     private void loadUserNamesAndAddresses(List<String> userIds) {
         if (userIds.isEmpty()) {
             adapter.setUserNameMap(userNameMap);
@@ -83,7 +110,6 @@ public class CourierOrdersFragment extends Fragment {
             return;
         }
         FirebaseFirestore db = FirebaseFirestore.getInstance();
-        // Загружаем имена
         db.collection("users")
                 .whereIn("userId", userIds)
                 .get()
@@ -98,7 +124,6 @@ public class CourierOrdersFragment extends Fragment {
                             userNameMap.put(userId, fio.trim());
                         }
                     }
-                    // Загружаем адреса после имен
                     db.collection("addresses")
                             .whereIn("userId", userIds)
                             .get()
@@ -125,20 +150,35 @@ public class CourierOrdersFragment extends Fragment {
                 });
     }
 
+    /** Курьер берёт заказ: courierId, courierTakeTime, статус не меняем! */
     private void takeOrder(Order order) {
-        String courierId = getActivity().getIntent().getStringExtra("userId");
+        long takeTime = System.currentTimeMillis();
         FirebaseFirestore db = FirebaseFirestore.getInstance();
-
         db.collection("orders").document(order.getFirestoreOrderId())
-                .update("courierId", courierId, "statusId", 3)
+                .update("courierId", courierId, "courierTakeTime", takeTime)
                 .addOnSuccessListener(aVoid -> {
-                    Toast.makeText(getContext(), "Заказ принят!", Toast.LENGTH_SHORT).show();
-                    loadOrders(); // обновить список
+                    Toast.makeText(getContext(), "Заказ принят! Ожидайте приготовления...", Toast.LENGTH_SHORT).show();
+                    loadOrders();
                 })
                 .addOnFailureListener(e -> {
                     Toast.makeText(getContext(), "Ошибка принятия заказа: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                 });
     }
+
+    /** Курьер отмечает "Доставлен" (статус = 3) */
+    private void markOrderAsDelivered(Order order) {
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        db.collection("orders").document(order.getFirestoreOrderId())
+                .update("statusId", 3, "deliveredTime", System.currentTimeMillis())
+                .addOnSuccessListener(aVoid -> {
+                    Toast.makeText(getContext(), "Заказ отмечен как доставленный!", Toast.LENGTH_SHORT).show();
+                    loadOrders();
+                })
+                .addOnFailureListener(e -> {
+                    Toast.makeText(getContext(), "Ошибка: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                });
+    }
+
 
 
 }

@@ -458,10 +458,10 @@ public class CartFragment extends Fragment {
         }
 
         firestore.collection("orders")
-                .add(orderMap)
-                .addOnSuccessListener(documentReference -> {
-                    String firestoreOrderId = documentReference.getId();
-                    // Сохраняем все позиции заказа в подколлекцию "ordered_items" Firestore
+                .document(String.valueOf(orderId)) // используем свой числовой orderId как id документа!
+                .set(orderMap)
+                .addOnSuccessListener(aVoid -> {
+                    // Сохраняем позиции заказа в подколлекцию "ordered_items"
                     for (CartItem ci : items) {
                         Map<String, Object> itemMap = new HashMap<>();
                         itemMap.put("productType", ci.getProductType());
@@ -472,14 +472,12 @@ public class CartFragment extends Fragment {
                         itemMap.put("unitPrice", ci.getUnitPrice());
                         itemMap.put("quantity", ci.getQuantity());
                         firestore.collection("orders")
-                                .document(firestoreOrderId)
+                                .document(String.valueOf(orderId))
                                 .collection("ordered_items")
                                 .add(itemMap);
                     }
-                    // Можно здесь добавить post-процедуры (например, уведомление пользователя)
                 })
                 .addOnFailureListener(e -> {
-                    // Полная обработка ошибки
                     new Handler(requireActivity().getMainLooper()).post(() -> {
                         Toast.makeText(requireContext(),
                                 "Ошибка при сохранении заказа в облако: " + e.getMessage(), Toast.LENGTH_LONG).show();

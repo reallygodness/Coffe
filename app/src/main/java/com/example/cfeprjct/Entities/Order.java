@@ -31,6 +31,11 @@ public class Order {
 
     private String firestoreOrderId;
 
+    private String courierId;        // ID курьера, который взял заказ
+    private Long courierTakeTime;    // Время, когда курьер взял заказ (timestamp)
+    private Long deliveryStartTime;  // Время начала доставки (timestamp)
+    private Long deliveredTime;      // Время доставки (timestamp)
+
     // геттеры/сеттеры...
 
     public int getOrderId() { return orderId; }
@@ -60,5 +65,31 @@ public class Order {
     public int getUserOrderNumber() { return userOrderNumber; }
     public void setUserOrderNumber(int n) { this.userOrderNumber = n; }
 
+    public String getCourierId() {
+        return courierId;
+    }
+    public void setCourierId(String courierId) {
+        this.courierId = courierId;
+    }
 
+    public Long getCourierTakeTime() {
+        return courierTakeTime;
+    }
+    public void setCourierTakeTime(Long courierTakeTime) {
+        this.courierTakeTime = courierTakeTime;
+    }
+
+    public Long getDeliveryStartTime() {
+        return deliveryStartTime;
+    }
+    public void setDeliveryStartTime(Long deliveryStartTime) {
+        this.deliveryStartTime = deliveryStartTime;
+    }
+
+    public Long getDeliveredTime() {
+        return deliveredTime;
+    }
+    public void setDeliveredTime(Long deliveredTime) {
+        this.deliveredTime = deliveredTime;
+    }
 }
