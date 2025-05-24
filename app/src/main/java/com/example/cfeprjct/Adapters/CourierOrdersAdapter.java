@@ -33,8 +33,8 @@ public class CourierOrdersAdapter extends RecyclerView.Adapter<CourierOrdersAdap
     private String courierId;
     private OnTakeOrderClickListener listener;
 
-    // Для таймеров (ключ — firestoreOrderId, чтобы не было путаницы)
-    private final Map<String, CountDownTimer> timerMap = new HashMap<>();
+    // Для управления таймерами по ViewHolder
+    private final Map<Integer, CountDownTimer> timerMap = new HashMap<>();
 
     public CourierOrdersAdapter(List<Order> orders, Map<String, String> userNameMap, Map<String, Address> addressMap, OnTakeOrderClickListener listener) {
         this.orders = orders;
@@ -66,7 +66,7 @@ public class CourierOrdersAdapter extends RecyclerView.Adapter<CourierOrdersAdap
     @Override
     public void onBindViewHolder(@NonNull OrderViewHolder holder, int position) {
         Order order = orders.get(position);
-        holder.bind(order, userNameMap, addressMap, courierId, listener, timerMap);
+        holder.bind(order, userNameMap, addressMap, courierId, listener, timerMap, position);
     }
 
     @Override
@@ -91,16 +91,14 @@ public class CourierOrdersAdapter extends RecyclerView.Adapter<CourierOrdersAdap
         }
 
         public void bind(Order order, Map<String, String> userNameMap, Map<String, Address> addressMap, String courierId,
-                         OnTakeOrderClickListener listener, Map<String, CountDownTimer> timerMap) {
+                         OnTakeOrderClickListener listener, Map<Integer, CountDownTimer> timerMap, int position) {
             btnTakeOrder.setVisibility(View.GONE);
             btnDelivered.setVisibility(View.GONE);
             textOrderTimer.setVisibility(View.GONE);
             textOrderStatus.setVisibility(View.VISIBLE);
 
-            // Используем firestoreOrderId как номер заказа
-            String orderNumber = order.getFirestoreOrderId() != null ? order.getFirestoreOrderId() : "—";
-            textOrderNumber.setText("Заказ №" + orderNumber);
-
+            // ОТЛИЧИЕ: теперь номер заказа — всегда orderId (а не userOrderNumber)
+            textOrderNumber.setText("Заказ №" + order.getOrderId());
             String clientName = userNameMap.getOrDefault(order.getUserId(), "—");
             textOrderClient.setText("Клиент: " + clientName);
 
@@ -114,39 +112,37 @@ public class CourierOrdersAdapter extends RecyclerView.Adapter<CourierOrdersAdap
             textOrderSum.setText("Сумма заказа: " + order.getTotalPrice() + " ₽");
 
             long now = System.currentTimeMillis();
-            // Очищаем старый таймер по id заказа
-            if (order.getFirestoreOrderId() != null && timerMap.containsKey(order.getFirestoreOrderId())) {
-                timerMap.get(order.getFirestoreOrderId()).cancel();
-                timerMap.remove(order.getFirestoreOrderId());
+
+            // Очищаем старый таймер для позиции
+            if (timerMap.containsKey(position)) {
+                timerMap.get(position).cancel();
+                timerMap.remove(position);
             }
 
-            // ---------- ЛОГИКА СТАТУСОВ ----------
+            // --- Статусы и таймеры ---
             if (order.getStatusId() == 1) { // В готовке
                 if (order.getCourierId() == null || order.getCourierId().isEmpty()) {
-                    // Свободен
                     btnTakeOrder.setVisibility(View.VISIBLE);
                     btnTakeOrder.setOnClickListener(v -> listener.onTakeOrder(order));
                     textOrderStatus.setText("Статус: В готовке (свободен)");
                 } else if (order.getCourierId().equals(courierId)) {
-                    // Взят этим курьером, показываем таймер до конца готовки
                     textOrderTimer.setVisibility(View.VISIBLE);
-                    long takeTime = order.getCourierTakeTime() != null ? order.getCourierTakeTime() : now;
+                    long takeTime = order.getCourierTakeTime() != null ? order.getCourierTakeTime() : order.getCreatedAt();
                     long msLeft = (takeTime + 5 * 60 * 1000) - now;
                     if (msLeft > 0) {
                         textOrderStatus.setText("Статус: Ожидание приготовления");
                         startCountDownTimer(msLeft, textOrderTimer, () -> {
-                            // По истечении времени меняем статус на "В доставке"
-                            updateOrderStatusToDelivery(order.getFirestoreOrderId());
-                        }, timerMap, order.getFirestoreOrderId());
+                            // После таймера меняем статус через Firestore (отправит "В доставке")
+                            updateOrderStatusToDelivery(order.getOrderId());
+                        }, timerMap, position);
                     } else {
                         textOrderStatus.setText("Статус: Ожидание статуса доставки...");
-                        updateOrderStatusToDelivery(order.getFirestoreOrderId());
+                        updateOrderStatusToDelivery(order.getOrderId());
                     }
                 } else {
                     textOrderStatus.setText("Статус: В готовке (занят)");
                 }
-            } else if (order.getStatusId() == 2 && order.getCourierId().equals(courierId)) {
-                // В доставке этим курьером (20 минут)
+            } else if (order.getStatusId() == 2 && order.getCourierId().equals(courierId)) { // В доставке этим курьером
                 textOrderTimer.setVisibility(View.VISIBLE);
                 btnDelivered.setVisibility(View.VISIBLE);
                 btnDelivered.setOnClickListener(v -> listener.onDelivered(order));
@@ -154,7 +150,7 @@ public class CourierOrdersAdapter extends RecyclerView.Adapter<CourierOrdersAdap
                 long deliveryStartTime = order.getDeliveryStartTime() != null ? order.getDeliveryStartTime() : now;
                 long msLeft = (deliveryStartTime + 20 * 60 * 1000) - now;
                 if (msLeft > 0) {
-                    startCountDownTimer(msLeft, textOrderTimer, null, timerMap, order.getFirestoreOrderId());
+                    startCountDownTimer(msLeft, textOrderTimer, null, timerMap, position);
                 } else {
                     textOrderTimer.setText("00:00");
                 }
@@ -168,7 +164,7 @@ public class CourierOrdersAdapter extends RecyclerView.Adapter<CourierOrdersAdap
         }
 
         private void startCountDownTimer(long millisInFuture, TextView timerView, Runnable onFinish,
-                                         Map<String, CountDownTimer> timerMap, String orderId) {
+                                         Map<Integer, CountDownTimer> timerMap, int position) {
             CountDownTimer timer = new CountDownTimer(millisInFuture, 1000) {
                 @Override
                 public void onTick(long millisUntilFinished) {
@@ -176,20 +172,18 @@ public class CourierOrdersAdapter extends RecyclerView.Adapter<CourierOrdersAdap
                     long secs = (millisUntilFinished / 1000) % 60;
                     timerView.setText(String.format("%02d:%02d", mins, secs));
                 }
-
                 @Override
                 public void onFinish() {
                     timerView.setText("00:00");
                     if (onFinish != null) onFinish.run();
                 }
             }.start();
-            if (orderId != null)
-                timerMap.put(orderId, timer);
+            timerMap.put(position, timer);
         }
 
-        private void updateOrderStatusToDelivery(String firestoreOrderId) {
+        private void updateOrderStatusToDelivery(int orderId) {
             FirebaseFirestore.getInstance().collection("orders")
-                    .document(firestoreOrderId)
+                    .document(String.valueOf(orderId))
                     .update("statusId", 2, "deliveryStartTime", System.currentTimeMillis());
         }
     }

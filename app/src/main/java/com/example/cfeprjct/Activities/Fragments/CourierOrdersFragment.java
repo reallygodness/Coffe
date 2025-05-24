@@ -71,36 +71,59 @@ public class CourierOrdersFragment extends Fragment {
     private void loadOrders() {
         FirebaseFirestore db = FirebaseFirestore.getInstance();
         db.collection("orders")
-                .whereIn("statusId", List.of(1, 2)) // только "В готовке" и "В доставке"
+                .whereIn("statusId", List.of(1, 2))
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
                     ordersList.clear();
                     Set<String> userIds = new HashSet<>();
                     long now = System.currentTimeMillis();
                     for (QueryDocumentSnapshot doc : queryDocumentSnapshots) {
-                        // ... [твой парсинг order, setOrderId, setFirestoreOrderId и т.д.]
                         Order order = doc.toObject(Order.class);
-                        order.setOrderId(Integer.parseInt(doc.getId()));
+
+                        // --- FIX: Сохраняем Firestore id в поле, чтобы не было NullPointerException
                         order.setFirestoreOrderId(doc.getId());
 
-                        // Только активные:
-                        // "В готовке" — свободные или взятые этим курьером
-                        if (order.getStatusId() == 1 &&
-                                ((order.getCourierId() == null || order.getCourierId().isEmpty()) ||
-                                        courierId.equals(order.getCourierId()))) {
+                        // --- FIX: Если orderId не заполнен (или =0), ставим его из Firestore id (строкового)
+                        try {
+                            if (order.getOrderId() == 0) {
+                                // Firestore id теперь = orderId (в performCheckout ты делаешь .document(String.valueOf(orderId)))
+                                order.setOrderId(Integer.parseInt(doc.getId()));
+                            }
+                        } catch (Exception ignored) {}
+
+                        // 1. "В готовке" — свободные
+                        if (order.getStatusId() == 1 && (order.getCourierId() == null || order.getCourierId().isEmpty())) {
                             ordersList.add(order);
                         }
-                        // "В доставке" только свои заказы
+                        // 2. "В готовке" — взятые этим курьером, но не истёк таймер готовки
+                        else if (order.getStatusId() == 1 && courierId.equals(order.getCourierId())) {
+                            long takeTime = order.getCourierTakeTime() != null ? order.getCourierTakeTime() : order.getCreatedAt();
+                            // Если прошло больше 5 минут — обновим статус (готовка закончилась)
+                            if (now - takeTime >= 5 * 60 * 1000) {
+                                db.collection("orders").document(order.getFirestoreOrderId())
+                                        .update("statusId", 2, "deliveryStartTime", now);
+                                order.setStatusId(2);
+                                order.setDeliveryStartTime(now);
+                                ordersList.add(order);
+                            } else {
+                                ordersList.add(order);
+                            }
+                        }
+                        // 3. "В доставке" только свои заказы
                         else if (order.getStatusId() == 2 && courierId.equals(order.getCourierId())) {
                             ordersList.add(order);
                         }
-                        // Всё остальное не добавляем!
+                        // (другие статусы не показываем)
                         if (order.getUserId() != null) userIds.add(order.getUserId());
                     }
                     loadUserNamesAndAddresses(new ArrayList<>(userIds));
+                })
+                .addOnFailureListener(e -> {
+                    Toast.makeText(getContext(), "Ошибка загрузки заказов: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                 });
-
     }
+
+
 
     private void loadUserNamesAndAddresses(List<String> userIds) {
         if (userIds.isEmpty()) {

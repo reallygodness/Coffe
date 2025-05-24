@@ -405,12 +405,12 @@ public class CartFragment extends Fragment {
         int nextOrderNum = lastOrderNum + 1;
 
         Order order = new Order();
-        order.setUserId(AuthUtils.getLoggedInUserId(requireContext()));
+        order.setUserId(userId);
         order.setCreatedAt(now);
         order.setStatusId(cookId);
         order.setTotalPrice(total);
         order.setUserOrderNumber(nextOrderNum);
-        int orderId = (int)orderDAO.insertOrder(order);
+        int orderId = (int) orderDAO.insertOrder(order); // локальный Room id (и Firestore id будет такой же!)
 
         // Вставляем позиции в зависимости от типа
         for (CartItem ci : items) {
@@ -442,7 +442,9 @@ public class CartFragment extends Fragment {
             }
         }
 
+        // --- новый блок отправки заказа в Firestore ---
         Map<String, Object> orderMap = new HashMap<>();
+        orderMap.put("orderId", orderId); // обязательно!
         orderMap.put("userId", order.getUserId());
         orderMap.put("userOrderNumber", order.getUserOrderNumber());
         orderMap.put("createdAt", order.getCreatedAt());
@@ -454,14 +456,15 @@ public class CartFragment extends Fragment {
             orderMap.put("address", address.getCity() + ", " + address.getStreet() + " " +
                     address.getHouse() + (address.getApartment().isEmpty() ? "" : ", кв. " + address.getApartment()));
         } else {
-            orderMap.put("address", ""); // если адрес не найден
+            orderMap.put("address", "");
         }
 
+        // --- !!! Теперь Firestore id = orderId !!! ---
         firestore.collection("orders")
-                .document(String.valueOf(orderId)) // используем свой числовой orderId как id документа!
+                .document(String.valueOf(orderId)) // <--- Числовой id!
                 .set(orderMap)
-                .addOnSuccessListener(aVoid -> {
-                    // Сохраняем позиции заказа в подколлекцию "ordered_items"
+                .addOnSuccessListener(unused -> {
+                    // После успешной отправки можно сохранять позиции
                     for (CartItem ci : items) {
                         Map<String, Object> itemMap = new HashMap<>();
                         itemMap.put("productType", ci.getProductType());
@@ -476,6 +479,7 @@ public class CartFragment extends Fragment {
                                 .collection("ordered_items")
                                 .add(itemMap);
                     }
+                    // Можно тут сделать уведомление или другую post-логику
                 })
                 .addOnFailureListener(e -> {
                     new Handler(requireActivity().getMainLooper()).post(() -> {
@@ -486,16 +490,16 @@ public class CartFragment extends Fragment {
 
         // Очищаем корзину локально и на сервере
         db.cartItemDao().clearAll();
-        clearCartAndCloud(AuthUtils.getLoggedInUserId(requireContext()));
+        clearCartAndCloud(userId);
 
         new Handler(requireActivity().getMainLooper()).post(() -> {
             Toast.makeText(requireContext(),
                     "Заказ оформлен", Toast.LENGTH_SHORT).show();
-            ((MainActivity)requireActivity()).getBottomNavigationView()
+            ((MainActivity) requireActivity()).getBottomNavigationView()
                     .setSelectedItemId(R.id.nav_orders);
-            // далее — смена статуса через 20 минут…
         });
     }
+
 
     private void clearCartAndCloud(String userId) {
         CollectionReference col = firestore.collection("carts")
