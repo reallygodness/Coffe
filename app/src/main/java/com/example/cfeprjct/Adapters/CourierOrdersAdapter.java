@@ -102,6 +102,7 @@ public class CourierOrdersAdapter extends RecyclerView.Adapter<CourierOrdersAdap
             String clientName = userNameMap.getOrDefault(order.getUserId(), "—");
             textOrderClient.setText("Клиент: " + clientName);
 
+
             Address addr = addressMap.get(order.getUserId());
             String addrStr = (addr != null) ?
                     addr.getCity() + ", " + addr.getStreet() + " " + addr.getHouse() +
@@ -113,7 +114,6 @@ public class CourierOrdersAdapter extends RecyclerView.Adapter<CourierOrdersAdap
 
             long now = System.currentTimeMillis();
 
-            // Очищаем старый таймер для позиции
             if (timerMap.containsKey(position)) {
                 timerMap.get(position).cancel();
                 timerMap.remove(position);
@@ -122,17 +122,18 @@ public class CourierOrdersAdapter extends RecyclerView.Adapter<CourierOrdersAdap
             // --- Статусы и таймеры ---
             if (order.getStatusId() == 1) { // В готовке
                 if (order.getCourierId() == null || order.getCourierId().isEmpty()) {
+                    // Заказ свободен, можно взять
                     btnTakeOrder.setVisibility(View.VISIBLE);
                     btnTakeOrder.setOnClickListener(v -> listener.onTakeOrder(order));
                     textOrderStatus.setText("Статус: В готовке (свободен)");
                 } else if (order.getCourierId().equals(courierId)) {
+                    // Заказ взят этим курьером — показываем таймер готовки (5 минут c Firestore!)
                     textOrderTimer.setVisibility(View.VISIBLE);
                     long takeTime = order.getCourierTakeTime() != null ? order.getCourierTakeTime() : order.getCreatedAt();
                     long msLeft = (takeTime + 5 * 60 * 1000) - now;
                     if (msLeft > 0) {
                         textOrderStatus.setText("Статус: Ожидание приготовления");
                         startCountDownTimer(msLeft, textOrderTimer, () -> {
-                            // После таймера меняем статус через Firestore (отправит "В доставке")
                             updateOrderStatusToDelivery(order.getOrderId());
                         }, timerMap, position);
                     } else {
@@ -142,7 +143,8 @@ public class CourierOrdersAdapter extends RecyclerView.Adapter<CourierOrdersAdap
                 } else {
                     textOrderStatus.setText("Статус: В готовке (занят)");
                 }
-            } else if (order.getStatusId() == 2 && order.getCourierId().equals(courierId)) { // В доставке этим курьером
+            } else if (order.getStatusId() == 2 && courierId.equals(order.getCourierId())) {
+                // В доставке этим курьером — показываем таймер доставки
                 textOrderTimer.setVisibility(View.VISIBLE);
                 btnDelivered.setVisibility(View.VISIBLE);
                 btnDelivered.setOnClickListener(v -> listener.onDelivered(order));
@@ -154,7 +156,7 @@ public class CourierOrdersAdapter extends RecyclerView.Adapter<CourierOrdersAdap
                 } else {
                     textOrderTimer.setText("00:00");
                 }
-            } else if (order.getStatusId() == 3 && order.getCourierId().equals(courierId)) {
+            } else if (order.getStatusId() == 3 && courierId.equals(order.getCourierId())) {
                 textOrderStatus.setText("Статус: Доставлен и оплачен");
                 textOrderTimer.setVisibility(View.GONE);
                 btnDelivered.setVisibility(View.GONE);
@@ -181,6 +183,7 @@ public class CourierOrdersAdapter extends RecyclerView.Adapter<CourierOrdersAdap
             timerMap.put(position, timer);
         }
 
+        // Firestore: ставим статус "В доставке" (statusId=2) и deliveryStartTime
         private void updateOrderStatusToDelivery(int orderId) {
             FirebaseFirestore.getInstance().collection("orders")
                     .document(String.valueOf(orderId))

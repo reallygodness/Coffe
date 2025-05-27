@@ -71,7 +71,7 @@ public class CourierOrdersFragment extends Fragment {
     private void loadOrders() {
         FirebaseFirestore db = FirebaseFirestore.getInstance();
         db.collection("orders")
-                .whereIn("statusId", List.of(1, 2))
+                .whereIn("statusId", List.of(1, 2)) // <--- Только в готовке и в доставке!
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
                     ordersList.clear();
@@ -79,17 +79,10 @@ public class CourierOrdersFragment extends Fragment {
                     long now = System.currentTimeMillis();
                     for (QueryDocumentSnapshot doc : queryDocumentSnapshots) {
                         Order order = doc.toObject(Order.class);
-
-                        // --- FIX: Сохраняем Firestore id в поле, чтобы не было NullPointerException
                         order.setFirestoreOrderId(doc.getId());
 
-                        // --- FIX: Если orderId не заполнен (или =0), ставим его из Firestore id (строкового)
-                        try {
-                            if (order.getOrderId() == 0) {
-                                // Firestore id теперь = orderId (в performCheckout ты делаешь .document(String.valueOf(orderId)))
-                                order.setOrderId(Integer.parseInt(doc.getId()));
-                            }
-                        } catch (Exception ignored) {}
+                        // Пропускаем доставленные (statusId == 3)
+                        if (order.getStatusId() == 3) continue; // <--- Вот это фильтрация!
 
                         // 1. "В готовке" — свободные
                         if (order.getStatusId() == 1 && (order.getCourierId() == null || order.getCourierId().isEmpty())) {
@@ -122,6 +115,14 @@ public class CourierOrdersFragment extends Fragment {
                     Toast.makeText(getContext(), "Ошибка загрузки заказов: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                 });
     }
+
+
+
+    private void showError(String msg) {
+        Toast.makeText(getContext(), "Ошибка загрузки заказов: " + msg, Toast.LENGTH_SHORT).show();
+    }
+
+
 
 
 
@@ -183,9 +184,7 @@ public class CourierOrdersFragment extends Fragment {
                     Toast.makeText(getContext(), "Заказ принят! Ожидайте приготовления...", Toast.LENGTH_SHORT).show();
                     loadOrders();
                 })
-                .addOnFailureListener(e -> {
-                    Toast.makeText(getContext(), "Ошибка принятия заказа: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                });
+                .addOnFailureListener(e -> showError(e.getMessage()));
     }
 
     /** Курьер отмечает "Доставлен" (статус = 3) */
@@ -197,9 +196,7 @@ public class CourierOrdersFragment extends Fragment {
                     Toast.makeText(getContext(), "Заказ отмечен как доставленный!", Toast.LENGTH_SHORT).show();
                     loadOrders();
                 })
-                .addOnFailureListener(e -> {
-                    Toast.makeText(getContext(), "Ошибка: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                });
+                .addOnFailureListener(e -> showError(e.getMessage()));
     }
 
 

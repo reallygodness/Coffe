@@ -71,24 +71,22 @@ public class UserRepository {
                                         return;
                                     }
 
-                                    // Если нигде не найдено — продолжаем регистрацию
                                     try {
                                         byte[] salt = PasswordUtils.generateSalt();
                                         String hashedPassword = PasswordUtils.hashPassword(password, salt);
 
-                                        // Генерируем userId
+                                        // Генерируем userId заранее (этот id будет id документа)
                                         DocumentReference newUserRef = firestore.collection("users").document();
                                         String generatedId = newUserRef.getId();
 
-                                        // Создаём объект пользователя с ролью user (roleId = 1)
                                         User newUser = new User(firstName, lastName, email, phone, hashedPassword);
                                         newUser.setUserId(generatedId);
-                                        newUser.setRoleId(1); // <--- роль user
+                                        newUser.setRoleId(1); // роль user
 
-                                        // Вставляем в Room
+                                        // Сохраняем локально
                                         new Thread(() -> userDao.insertUser(newUser)).start();
 
-                                        // Готовим данные для Firestore
+                                        // Firestore: теперь userId — это имя документа!
                                         Map<String, Object> userMap = new HashMap<>();
                                         userMap.put("userId", generatedId);
                                         userMap.put("firstName", firstName);
@@ -96,14 +94,17 @@ public class UserRepository {
                                         userMap.put("email", email);
                                         userMap.put("phoneNumber", phone);
                                         userMap.put("password", hashedPassword);
-                                        userMap.put("roleId", 1); // <--- роль user
+                                        userMap.put("roleId", 1);
 
                                         if (newUser.getProfileImage() != null) {
                                             String b64 = Base64.encodeToString(newUser.getProfileImage(), Base64.DEFAULT);
                                             userMap.put("profileImage", b64);
                                         }
 
-                                        newUserRef.set(userMap)
+                                        // !!! Вот это главное изменение: .document(generatedId)
+                                        firestore.collection("users")
+                                                .document(generatedId)
+                                                .set(userMap)
                                                 .addOnSuccessListener(aVoid -> callback.onSuccess(newUser))
                                                 .addOnFailureListener(e ->
                                                         callback.onFailure("Ошибка создания аккаунта в облаке: " + e.getMessage()));
@@ -117,6 +118,7 @@ public class UserRepository {
                     .addOnFailureListener(e -> callback.onFailure("Ошибка проверки email: " + e.getMessage()));
         }).start();
     }
+
 
     /**
      * Авторизация пользователя. Сначала локально, иначе — из Firestore.
