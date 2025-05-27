@@ -128,11 +128,15 @@ public class ProfileActivity extends AppCompatActivity {
             // Получаем пользователя из локальной базы по userId
             User user = db.userDAO().getUserById(userId);
             if (user != null) {
+                // FIX: Сохраняем текущее значение roleId
+                int currentRoleId = user.getRoleId();
+
                 // Обновляем данные пользователя
                 user.setPhoneNumber(newPhoneNumber);
                 user.setFirstName(firstNameEditText.getText().toString().trim());
                 user.setLastName(lastNameEditText.getText().toString().trim());
                 user.setEmail(emailEditText.getText().toString().trim());
+                user.setRoleId(currentRoleId); // FIX: Не меняем роль
                 if (selectedImageBytes != null) {
                     user.setProfileImage(selectedImageBytes);
                     selectedImageBytes = null;
@@ -148,6 +152,8 @@ public class ProfileActivity extends AppCompatActivity {
                 updatedUserMap.put("firstName", user.getFirstName());
                 updatedUserMap.put("lastName", user.getLastName());
                 updatedUserMap.put("email", user.getEmail());
+                // FIX: Всегда передавать актуальный roleId!
+                updatedUserMap.put("roleId", currentRoleId);
                 if (user.getProfileImage() != null) {
                     updatedUserMap.put("profileImage", Base64.encodeToString(user.getProfileImage(), Base64.DEFAULT));
                 }
@@ -156,14 +162,11 @@ public class ProfileActivity extends AppCompatActivity {
                 firestore.collection("users").document(user.getUserId())
                         .set(updatedUserMap)
                         .addOnSuccessListener(aVoid -> runOnUiThread(() -> {
-                            // Обновляем отображение номера на экране
                             phoneNumberTextView.setText("Номер телефона: +" + newPhoneNumber);
                             updateUI();
                             Toast.makeText(ProfileActivity.this, "Профиль обновлён!", Toast.LENGTH_SHORT).show();
                             exitEditMode();
 
-                            // Если номер изменён по сравнению с предыдущим, принудительно разлогинить пользователя,
-                            // затем перезапускаем приложение – таким образом, при следующем запуске загружаются новые данные
                             if (!newPhoneNumber.equals(phoneNumber)) {
                                 restartAppIfPhoneChanged(true);
                             } else {
@@ -188,8 +191,6 @@ public class ProfileActivity extends AppCompatActivity {
 
             // Обновим локально
             db.userDAO().insertUser(user);
-
-
 
             // Готовим данные для Firestore
             Map<String, Object> updatedUser = new HashMap<>();

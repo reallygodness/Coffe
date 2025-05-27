@@ -21,7 +21,6 @@ import java.util.Map;
 
 public class CourierOrdersAdapter extends RecyclerView.Adapter<CourierOrdersAdapter.OrderViewHolder> {
 
-
     public interface OnTakeOrderClickListener {
         void onTakeOrder(Order order);
         void onDelivered(Order order);
@@ -97,11 +96,10 @@ public class CourierOrdersAdapter extends RecyclerView.Adapter<CourierOrdersAdap
             textOrderTimer.setVisibility(View.GONE);
             textOrderStatus.setVisibility(View.VISIBLE);
 
-            // ОТЛИЧИЕ: теперь номер заказа — всегда orderId (а не userOrderNumber)
+            // Правильный номер заказа
             textOrderNumber.setText("Заказ №" + order.getOrderId());
             String clientName = userNameMap.getOrDefault(order.getUserId(), "—");
             textOrderClient.setText("Клиент: " + clientName);
-
 
             Address addr = addressMap.get(order.getUserId());
             String addrStr = (addr != null) ?
@@ -114,26 +112,28 @@ public class CourierOrdersAdapter extends RecyclerView.Adapter<CourierOrdersAdap
 
             long now = System.currentTimeMillis();
 
+            // Очищаем старый таймер
             if (timerMap.containsKey(position)) {
                 timerMap.get(position).cancel();
                 timerMap.remove(position);
             }
 
-            // --- Статусы и таймеры ---
+            // --- Логика статусов и таймеров ---
             if (order.getStatusId() == 1) { // В готовке
                 if (order.getCourierId() == null || order.getCourierId().isEmpty()) {
-                    // Заказ свободен, можно взять
+                    // Заказ свободен
                     btnTakeOrder.setVisibility(View.VISIBLE);
                     btnTakeOrder.setOnClickListener(v -> listener.onTakeOrder(order));
                     textOrderStatus.setText("Статус: В готовке (свободен)");
                 } else if (order.getCourierId().equals(courierId)) {
-                    // Заказ взят этим курьером — показываем таймер готовки (5 минут c Firestore!)
+                    // Заказ взят этим курьером — таймер готовки (courierTakeTime!)
                     textOrderTimer.setVisibility(View.VISIBLE);
                     long takeTime = order.getCourierTakeTime() != null ? order.getCourierTakeTime() : order.getCreatedAt();
                     long msLeft = (takeTime + 5 * 60 * 1000) - now;
                     if (msLeft > 0) {
                         textOrderStatus.setText("Статус: Ожидание приготовления");
                         startCountDownTimer(msLeft, textOrderTimer, () -> {
+                            // После таймера переводим в "В доставке"
                             updateOrderStatusToDelivery(order.getOrderId());
                         }, timerMap, position);
                     } else {
@@ -143,8 +143,8 @@ public class CourierOrdersAdapter extends RecyclerView.Adapter<CourierOrdersAdap
                 } else {
                     textOrderStatus.setText("Статус: В готовке (занят)");
                 }
-            } else if (order.getStatusId() == 2 && courierId.equals(order.getCourierId())) {
-                // В доставке этим курьером — показываем таймер доставки
+            } else if (order.getStatusId() == 2 && order.getCourierId().equals(courierId)) {
+                // В доставке этим курьером — таймер 20 минут доставки
                 textOrderTimer.setVisibility(View.VISIBLE);
                 btnDelivered.setVisibility(View.VISIBLE);
                 btnDelivered.setOnClickListener(v -> listener.onDelivered(order));
@@ -156,7 +156,7 @@ public class CourierOrdersAdapter extends RecyclerView.Adapter<CourierOrdersAdap
                 } else {
                     textOrderTimer.setText("00:00");
                 }
-            } else if (order.getStatusId() == 3 && courierId.equals(order.getCourierId())) {
+            } else if (order.getStatusId() == 3 && order.getCourierId().equals(courierId)) {
                 textOrderStatus.setText("Статус: Доставлен и оплачен");
                 textOrderTimer.setVisibility(View.GONE);
                 btnDelivered.setVisibility(View.GONE);

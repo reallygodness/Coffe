@@ -193,4 +193,29 @@ public class UserRepository {
                             callback.onFailure("Ошибка соединения: " + e.getMessage()));
         }).start();
     }
+
+    public void updateUserProfile(User user, AuthCallback callback) {
+        Map<String, Object> userMap = new HashMap<>();
+        userMap.put("firstName", user.getFirstName());
+        userMap.put("lastName", user.getLastName());
+        userMap.put("email", user.getEmail());
+        userMap.put("phoneNumber", user.getPhoneNumber());
+        // ОБЯЗАТЕЛЬНО сохраняем roleId!
+        userMap.put("roleId", user.getRoleId());
+        if (user.getProfileImage() != null) {
+            String b64 = android.util.Base64.encodeToString(user.getProfileImage(), android.util.Base64.DEFAULT);
+            userMap.put("profileImage", b64);
+        }
+
+        firestore.collection("users")
+                .document(user.getUserId())
+                .update(userMap)
+                .addOnSuccessListener(aVoid -> {
+                    // Локально синхронизируем
+                    new Thread(() -> userDao.insertUser(user)).start();
+                    callback.onSuccess(user);
+                })
+                .addOnFailureListener(e -> callback.onFailure("Ошибка обновления профиля: " + e.getMessage()));
+    }
+
 }

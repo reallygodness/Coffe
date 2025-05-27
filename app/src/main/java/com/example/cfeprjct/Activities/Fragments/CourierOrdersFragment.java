@@ -71,50 +71,50 @@ public class CourierOrdersFragment extends Fragment {
     private void loadOrders() {
         FirebaseFirestore db = FirebaseFirestore.getInstance();
         db.collection("orders")
-                .whereIn("statusId", List.of(1, 2)) // <--- Только в готовке и в доставке!
+                .whereIn("statusId", List.of(1, 2))
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
                     ordersList.clear();
                     Set<String> userIds = new HashSet<>();
                     long now = System.currentTimeMillis();
+
+                    Order activeOrder = null;
                     for (QueryDocumentSnapshot doc : queryDocumentSnapshots) {
                         Order order = doc.toObject(Order.class);
                         order.setFirestoreOrderId(doc.getId());
 
-                        // Пропускаем доставленные (statusId == 3)
-                        if (order.getStatusId() == 3) continue; // <--- Вот это фильтрация!
-
-                        // 1. "В готовке" — свободные
-                        if (order.getStatusId() == 1 && (order.getCourierId() == null || order.getCourierId().isEmpty())) {
-                            ordersList.add(order);
+                        if (order.getStatusId() == 2 && courierId.equals(order.getCourierId())) {
+                            activeOrder = order;
+                            break;
                         }
-                        // 2. "В готовке" — взятые этим курьером, но не истёк таймер готовки
-                        else if (order.getStatusId() == 1 && courierId.equals(order.getCourierId())) {
-                            long takeTime = order.getCourierTakeTime() != null ? order.getCourierTakeTime() : order.getCreatedAt();
-                            // Если прошло больше 5 минут — обновим статус (готовка закончилась)
-                            if (now - takeTime >= 5 * 60 * 1000) {
-                                db.collection("orders").document(order.getFirestoreOrderId())
-                                        .update("statusId", 2, "deliveryStartTime", now);
-                                order.setStatusId(2);
-                                order.setDeliveryStartTime(now);
+                        if (order.getStatusId() == 1 && courierId.equals(order.getCourierId())) {
+                            activeOrder = order;
+                            break;
+                        }
+                    }
+
+                    if (activeOrder != null) {
+                        ordersList.add(activeOrder);
+                        if (activeOrder.getUserId() != null) userIds.add(activeOrder.getUserId());
+                    } else {
+                        for (QueryDocumentSnapshot doc : queryDocumentSnapshots) {
+                            Order order = doc.toObject(Order.class);
+                            order.setFirestoreOrderId(doc.getId());
+
+                            if (order.getStatusId() == 1 && (order.getCourierId() == null || order.getCourierId().isEmpty())) {
                                 ordersList.add(order);
-                            } else {
-                                ordersList.add(order);
+                                if (order.getUserId() != null) userIds.add(order.getUserId());
                             }
                         }
-                        // 3. "В доставке" только свои заказы
-                        else if (order.getStatusId() == 2 && courierId.equals(order.getCourierId())) {
-                            ordersList.add(order);
-                        }
-                        // (другие статусы не показываем)
-                        if (order.getUserId() != null) userIds.add(order.getUserId());
                     }
+
                     loadUserNamesAndAddresses(new ArrayList<>(userIds));
                 })
                 .addOnFailureListener(e -> {
                     Toast.makeText(getContext(), "Ошибка загрузки заказов: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                 });
     }
+
 
 
 
@@ -176,15 +176,30 @@ public class CourierOrdersFragment extends Fragment {
 
     /** Курьер берёт заказ: courierId, courierTakeTime, статус не меняем! */
     private void takeOrder(Order order) {
-        long takeTime = System.currentTimeMillis();
+        long now = System.currentTimeMillis();
         FirebaseFirestore db = FirebaseFirestore.getInstance();
+
+        // 1. Ставим courierId и courierTakeTime и меняем статус только в Firestore!
         db.collection("orders").document(order.getFirestoreOrderId())
-                .update("courierId", courierId, "courierTakeTime", takeTime)
-                .addOnSuccessListener(aVoid -> {
-                    Toast.makeText(getContext(), "Заказ принят! Ожидайте приготовления...", Toast.LENGTH_SHORT).show();
+                .update(
+                        "courierId", courierId,
+                        "courierTakeTime", now,
+                        "statusId", 1 // пока не меняем на 2!
+                ).addOnSuccessListener(aVoid -> {
+                    // 2. Сохраняем в локальный Room (НЕОБЯЗАТЕЛЬНО, если не используешь Room для заказов у курьера)
+                    // Если используешь — обнови локальный объект
+                    new Thread(() -> {
+                        order.setCourierId(courierId);
+                        order.setCourierTakeTime(now);
+                        order.setStatusId(1);
+                        // orderDao.updateOrder(order); // если есть локальная таблица заказов
+                    }).start();
+
+                    Toast.makeText(getContext(), "Заказ взят!", Toast.LENGTH_SHORT).show();
                     loadOrders();
-                })
-                .addOnFailureListener(e -> showError(e.getMessage()));
+                }).addOnFailureListener(e -> {
+                    Toast.makeText(getContext(), "Ошибка принятия заказа: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                });
     }
 
     /** Курьер отмечает "Доставлен" (статус = 3) */
