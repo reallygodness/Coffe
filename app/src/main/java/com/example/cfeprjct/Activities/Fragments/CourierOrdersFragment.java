@@ -36,6 +36,8 @@ public class CourierOrdersFragment extends Fragment {
     private Map<String, String> userNameMap = new HashMap<>();
     private Map<String, Address> addressMap = new HashMap<>();
     private String courierId;
+    private com.google.firebase.firestore.ListenerRegistration ordersListener;
+
 
     @Nullable
     @Override
