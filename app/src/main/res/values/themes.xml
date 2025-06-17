@@ -7,6 +7,7 @@
         <item name="colorPrimaryVariant">#B36D3F</item>
         <item name="colorSecondary">#F2EDE8</item>
 
+
         <!-- Цвета текста и фона -->
         <item name="android:windowBackground">#F9F9F9</item>
         <item name="android:textColorPrimary">#FF000000</item>

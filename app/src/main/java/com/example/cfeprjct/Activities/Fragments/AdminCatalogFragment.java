@@ -51,8 +51,6 @@ public class AdminCatalogFragment extends Fragment {
             rv.scrollToPosition(0);
         });
 
-
-
         // Кнопки категорий
         view.findViewById(R.id.btnDrinks).setOnClickListener(v -> {
             selectedCategory = "drinks";
@@ -89,6 +87,7 @@ public class AdminCatalogFragment extends Fragment {
         });
 
         loadCatalog();
+
 
         return view;
     }

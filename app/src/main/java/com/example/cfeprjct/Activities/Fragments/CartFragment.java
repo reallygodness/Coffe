@@ -10,6 +10,8 @@ import android.content.pm.PackageManager;
 import android.location.Geocoder;
 import android.os.Bundle;
 import android.os.Handler;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -78,13 +80,19 @@ public class CartFragment extends Fragment {
 
     private CartAdapter cartAdapter;
     private RecyclerView rvCart;
-    private TextView tvTotal, tvAddress, tvEmptyCart;
+    private TextView tvTotal, tvAddress, tvEmptyCart, tvAvailableBonuses;
     private ImageView btnEditAddress;
     private MaterialButton btnCheckout;
+
+    private EditText etUseBonuses;
 
     private final Set<Integer> previousCartItemIds = new HashSet<>();
     private boolean hasAddress = false;
     private boolean cartLoadedFromCloud = false;
+
+    private long userBonuses = 0;
+
+    private int cartSum = 0;
 
     @Nullable @Override
     public View onCreateView(@NonNull LayoutInflater inflater,
@@ -102,6 +110,7 @@ public class CartFragment extends Fragment {
         orderStatusDAO = db.orderStatusDAO();
         firestore = FirebaseFirestore.getInstance();
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireContext());
+
 
         String userId = AuthUtils.getLoggedInUserId(requireContext());
 
@@ -121,6 +130,8 @@ public class CartFragment extends Fragment {
         btnEditAddress = view.findViewById(R.id.btnEditAddress);
         btnCheckout = view.findViewById(R.id.btnCheckout);
         tvEmptyCart = view.findViewById(R.id.tvEmptyCart);
+        tvAvailableBonuses = view.findViewById(R.id.tvAvailableBonuses);
+        etUseBonuses = view.findViewById(R.id.etUseBonuses);
 
         // 4) RecyclerView
         rvCart.setLayoutManager(new LinearLayoutManager(requireContext()));
@@ -165,8 +176,52 @@ public class CartFragment extends Fragment {
             syncStatusesThenCheckout();
         });
 
+        loadUserBonuses();
+
+        etUseBonuses.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {}
+
+            @Override
+            public void afterTextChanged(Editable s) {
+                String str = s.toString().trim();
+                if (str.isEmpty()) {
+                    updateTotalWithBonuses();
+                    return;
+                }
+                try {
+                    long inputBonuses = Long.parseLong(str);
+                    // Максимум: не больше чем у пользователя и не больше 50% стоимости
+                    int total = cartSum + 100;
+                    float maxDiscountRub = total * 0.5f;
+                    long maxBonusesToUse = Math.min(userBonuses, (long) (maxDiscountRub * 10));
+                    if (inputBonuses > maxBonusesToUse) {
+                        // Обрезаем до максимального значения
+                        etUseBonuses.removeTextChangedListener(this);
+                        etUseBonuses.setText(String.valueOf(maxBonusesToUse));
+                        etUseBonuses.setSelection(etUseBonuses.getText().length());
+                        etUseBonuses.addTextChangedListener(this);
+                    }
+                } catch (NumberFormatException e) {
+                    // Если что-то не так — просто очищаем поле
+                    etUseBonuses.removeTextChangedListener(this);
+                    etUseBonuses.setText("");
+                    etUseBonuses.addTextChangedListener(this);
+                }
+                updateTotalWithBonuses();
+            }
+        });
+
+
+
+
         return view;
     }
+
+
 
     // ——— ADDRESS LOGIC ———
     private void loadAddress(@Nullable String userId) {
@@ -301,9 +356,8 @@ public class CartFragment extends Fragment {
         live.observe(getViewLifecycleOwner(), items -> {
             cartAdapter.submitList(items);
 
-            // UI: показываем/скрываем «Корзина пуста» и кнопку/итог
-            int sum = 0;
-            for (CartItem ci : items) sum += ci.getQuantity() * ci.getUnitPrice();
+            cartSum = 0;
+            for (CartItem ci : items) cartSum += ci.getQuantity() * ci.getUnitPrice();
             if (items.isEmpty()) {
                 tvEmptyCart.setVisibility(View.VISIBLE);
                 tvTotal.setVisibility(View.GONE);
@@ -318,26 +372,45 @@ public class CartFragment extends Fragment {
                             for (DocumentSnapshot doc : snapshot.getDocuments()) {
                                 doc.getReference().delete();
                             }
-                            // сбросим список ранее синхронизированных ID
                             previousCartItemIds.clear();
                         });
-                // —————————————————————————————————————————————————————————————
-
             } else {
                 tvEmptyCart.setVisibility(View.GONE);
                 tvTotal.setVisibility(View.VISIBLE);
                 btnCheckout.setVisibility(View.VISIBLE);
-                tvTotal.setText(String.format(Locale.getDefault(),
-                        "Итог: %d ₽ (доставка 100 ₽)", sum + 100));
-                updateCheckoutState(sum);
+                updateTotalWithBonuses(); // <-- Всегда пересчитывай итог с учетом бонусов!
+                updateCheckoutState(cartSum);
 
-                // Синхронизируем по-элементно только если есть что синхронизировать
                 Executors.newSingleThreadExecutor().execute(() ->
                         syncCartItemsToFirestore(userId, items)
                 );
             }
         });
     }
+
+    private void updateTotalWithBonuses() {
+        // cartSum — сумма всех товаров (без доставки), доставка всегда +100
+        int total = cartSum + 100;
+        String input = etUseBonuses.getText().toString().trim();
+        long bonusesToUse = 0;
+        try {
+            bonusesToUse = input.isEmpty() ? 0 : Long.parseLong(input);
+        } catch (NumberFormatException ignored) {}
+
+        // Ограничения: максимум 50% от суммы заказа, не больше userBonuses
+        float maxDiscountRub = total * 0.5f;
+        long maxBonusesToUse = Math.min(userBonuses, (long) (maxDiscountRub * 10));
+        if (bonusesToUse > maxBonusesToUse) bonusesToUse = maxBonusesToUse;
+
+        float discountRub = bonusesToUse / 10f;
+        float totalAfterDiscount = total - discountRub;
+        if (totalAfterDiscount < 0) totalAfterDiscount = 0;
+
+        tvTotal.setText(String.format(Locale.getDefault(),
+                "Итог: %d ₽ (доставка 100 ₽)", (int) totalAfterDiscount));
+    }
+
+
 
     private void syncCartItemsToFirestore(String userId, List<CartItem> items) {
         CollectionReference col = firestore.collection("carts")
@@ -404,11 +477,28 @@ public class CartFragment extends Fragment {
         if (lastOrderNum < 0) lastOrderNum = 0;
         int nextOrderNum = lastOrderNum + 1;
 
+        // === 1. Считываем доступные бонусы и сколько хочет списать ===
+        long bonusesToUse = 0;
+        try {
+            String input = etUseBonuses.getText().toString().trim();
+            bonusesToUse = input.isEmpty() ? 0 : Long.parseLong(input);
+        } catch (NumberFormatException ignored) {}
+        if (bonusesToUse > userBonuses) bonusesToUse = userBonuses;
+
+        float maxDiscountRub = total * 0.5f; // максимум 50% суммы заказа
+        long maxBonusesToUse = Math.min(userBonuses, (long) (maxDiscountRub * 10));
+        if (bonusesToUse > maxBonusesToUse) bonusesToUse = maxBonusesToUse;
+
+        float discountRub = bonusesToUse / 10f; // 10 бонусов = 1 рубль
+        float totalAfterDiscount = total - discountRub;
+        if (totalAfterDiscount < 0) totalAfterDiscount = 0;
+
+        // === 2. Создаём Order (Room) ===
         Order order = new Order();
         order.setUserId(userId);
         order.setCreatedAt(now);
         order.setStatusId(cookId);
-        order.setTotalPrice(total);
+        order.setTotalPrice(totalAfterDiscount); // уже с учетом скидки
         order.setUserOrderNumber(nextOrderNum);
         int orderId = (int) orderDAO.insertOrder(order); // локальный Room id (и Firestore id будет такой же!)
 
@@ -442,7 +532,7 @@ public class CartFragment extends Fragment {
             }
         }
 
-        // --- новый блок отправки заказа в Firestore ---
+        // === 3. Сохраняем заказ в Firestore ===
         Map<String, Object> orderMap = new HashMap<>();
         orderMap.put("orderId", orderId); // обязательно!
         orderMap.put("userId", order.getUserId());
@@ -450,6 +540,8 @@ public class CartFragment extends Fragment {
         orderMap.put("createdAt", order.getCreatedAt());
         orderMap.put("statusId", order.getStatusId());
         orderMap.put("totalPrice", order.getTotalPrice());
+        orderMap.put("bonusDiscount", discountRub);
+        orderMap.put("bonusUsed", bonusesToUse);
 
         Address address = addressDAO.getAddressByUserId(order.getUserId());
         if (address != null) {
@@ -459,9 +551,14 @@ public class CartFragment extends Fragment {
             orderMap.put("address", "");
         }
 
-        // --- !!! Теперь Firestore id = orderId !!! ---
+        final long bonusesToUseFinal = bonusesToUse;
+        final long userBonusesFinal = userBonuses;
+        final float totalAfterDiscountFinal = totalAfterDiscount;
+        final long bonusEarnedFinal = (long) Math.floor(totalAfterDiscountFinal * 0.1f);
+        final String userIdFinal = userId;
+
         firestore.collection("orders")
-                .document(String.valueOf(orderId)) // <--- Числовой id!
+                .document(String.valueOf(orderId)) // Числовой id!
                 .set(orderMap)
                 .addOnSuccessListener(unused -> {
                     // После успешной отправки можно сохранять позиции
@@ -479,7 +576,37 @@ public class CartFragment extends Fragment {
                                 .collection("ordered_items")
                                 .add(itemMap);
                     }
-                    // Можно тут сделать уведомление или другую post-логику
+
+                    // Списываем бонусы
+                    if (bonusesToUseFinal > 0) {
+                        FirebaseFirestore.getInstance()
+                                .collection("users").document(userIdFinal)
+                                .update("bonusPoints", userBonusesFinal - bonusesToUseFinal);
+                    }
+
+                    // Начисляем новые бонусы
+                    if (bonusEarnedFinal > 0) {
+                        FirebaseFirestore.getInstance()
+                                .collection("users").document(userIdFinal)
+                                .update("bonusPoints", userBonusesFinal - bonusesToUseFinal + bonusEarnedFinal);
+                    }
+
+                    // Очищаем корзину локально и на сервере
+                    new Thread(() -> {
+                        db.cartItemDao().clearAll();
+                        clearCartAndCloud(userIdFinal);
+                    }).start();
+
+                    // Показываем тост: сколько списано и сколько начислено
+                    final String msg = "Заказ оформлен"
+                            + (bonusesToUseFinal > 0 ? "\nСписано бонусов: " + bonusesToUseFinal : "")
+                            + (bonusEarnedFinal > 0 ? "\nНачислено бонусов: " + bonusEarnedFinal : "");
+
+                    new Handler(requireActivity().getMainLooper()).post(() -> {
+                        Toast.makeText(requireContext(), msg, Toast.LENGTH_LONG).show();
+                        ((MainActivity) requireActivity()).getBottomNavigationView()
+                                .setSelectedItemId(R.id.nav_orders);
+                    });
                 })
                 .addOnFailureListener(e -> {
                     new Handler(requireActivity().getMainLooper()).post(() -> {
@@ -487,17 +614,23 @@ public class CartFragment extends Fragment {
                                 "Ошибка при сохранении заказа в облако: " + e.getMessage(), Toast.LENGTH_LONG).show();
                     });
                 });
+    }
 
-        // Очищаем корзину локально и на сервере
-        db.cartItemDao().clearAll();
-        clearCartAndCloud(userId);
 
-        new Handler(requireActivity().getMainLooper()).post(() -> {
-            Toast.makeText(requireContext(),
-                    "Заказ оформлен", Toast.LENGTH_SHORT).show();
-            ((MainActivity) requireActivity()).getBottomNavigationView()
-                    .setSelectedItemId(R.id.nav_orders);
-        });
+
+
+
+    private void loadUserBonuses() {
+        String userId = AuthUtils.getLoggedInUserId(requireContext());
+        FirebaseFirestore.getInstance().collection("users").document(userId)
+                .get().addOnSuccessListener(doc -> {
+                    if (doc.contains("bonusPoints")) {
+                        Object bp = doc.get("bonusPoints");
+                        if (bp instanceof Number) userBonuses = ((Number) bp).longValue();
+                        tvAvailableBonuses.setText("Доступно бонусов: " + userBonuses);
+                        updateTotalWithBonuses(); // <--- сразу обновляем отображение
+                    }
+                });
     }
 
 

@@ -1,6 +1,8 @@
 package com.example.cfeprjct.Activities.Fragments;
 
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
@@ -30,6 +32,7 @@ import com.example.cfeprjct.AppDatabase;
 import com.example.cfeprjct.AuthUtils;
 import com.example.cfeprjct.R;
 import com.example.cfeprjct.User;
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.ListenerRegistration;
@@ -49,6 +52,8 @@ public class ProfileFragment extends Fragment {
     private AppDatabase db;
     private FirebaseFirestore firestore;
     private ListenerRegistration userListener;
+
+    private TextView tvBonusPoints;
 
     // Основной ключ – userId, полученный из SharedPreferences
     private String userId;
@@ -82,6 +87,7 @@ public class ProfileFragment extends Fragment {
         editProfileButton = view.findViewById(R.id.editProfileButton);
         profileImageView = view.findViewById(R.id.profileImageView);
         logoutButton = view.findViewById(R.id.logoutButton);
+        tvBonusPoints = view.findViewById(R.id.tvBonusPoints);
 
         // Получаем userId из SharedPreferences через AuthUtils
         userId = AuthUtils.getLoggedInUserId(requireContext());
@@ -94,12 +100,16 @@ public class ProfileFragment extends Fragment {
 
         updateUI();
 
+
+
         profileImageView.setEnabled(false);
         profileImageView.setOnClickListener(v -> openGallery());
 
         editProfileButton.setOnClickListener(v -> editProfile());
         saveButton.setOnClickListener(v -> saveProfileChanges());
         logoutButton.setOnClickListener(v -> logout());
+
+        loadBonusPoints();
 
         return view;
     }
@@ -115,6 +125,28 @@ public class ProfileFragment extends Fragment {
             subscribeToFirestoreUser(userId);
         }
     }
+
+    private void loadBonusPoints() {
+        String userId = AuthUtils.getLoggedInUserId(requireContext());
+        if (userId == null) {
+            tvBonusPoints.setText("Бонусы: -");
+            return;
+        }
+        FirebaseFirestore.getInstance()
+                .collection("users")
+                .document(userId)
+                .get()
+                .addOnSuccessListener(doc -> {
+                    long bonus = 0;
+                    if (doc.contains("bonusPoints")) {
+                        Object bp = doc.get("bonusPoints");
+                        if (bp instanceof Number) bonus = ((Number) bp).longValue();
+                    }
+                    tvBonusPoints.setText("Бонусы: " + bonus);
+                });
+    }
+
+
 
     private void updateUIWithUser(User user) {
         String fullName = user.getFirstName() + " " + user.getLastName();

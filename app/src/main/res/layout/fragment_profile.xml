@@ -62,6 +62,16 @@
         android:textColor="?android:textColorPrimary"
         android:textSize="18sp"
         android:paddingBottom="8dp" />
+    <TextView
+        android:id="@+id/tvBonusPoints"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Бонусы: 0"
+        android:textColor="?android:textColorPrimary"
+        android:textSize="18sp"
+        android:paddingBottom="8dp" />
+
+
 
     <!-- Кнопка для редактирования профиля -->
     <Button

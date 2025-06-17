@@ -15,14 +15,14 @@
     <!-- Нижняя навигация -->
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:id="@+id/admin_bottom_nav"
-        android:background="@color/bottom_nav_background"
-        app:itemIconTint="@color/bottom_nav_icon_color"
-        app:itemTextColor="@color/bottom_nav_text_color"
-        app:itemBackground="@android:color/transparent"
-        app:itemRippleColor="@color/bottom_nav_ripple"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom"
-        app:menu="@menu/admin_bottom_nav_menu"/>
+        android:background="@color/white"
+        app:itemIconTint="@color/bottom_nav_icon_color"
+        app:itemTextColor="@color/bottom_nav_text_color"
+        app:itemRippleColor="@android:color/transparent"
+        app:labelVisibilityMode="labeled"
+        app:menu="@menu/admin_bottom_nav_menu" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
