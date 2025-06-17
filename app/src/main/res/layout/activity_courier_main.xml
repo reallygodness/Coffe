@@ -19,6 +19,11 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom"
-        app:menu="@menu/bottom_nav_courier"/>
+        app:menu="@menu/bottom_nav_courier"
+        android:background="@color/bottom_nav_background"
+        app:itemIconTint="@color/bottom_nav_icon_color"
+        app:itemTextColor="@color/bottom_nav_text_color"
+        app:itemBackground="@android:color/transparent"
+        app:itemRippleColor="@color/bottom_nav_ripple"/>
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
