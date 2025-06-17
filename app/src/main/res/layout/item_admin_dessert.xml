@@ -1,0 +1,112 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/cardRoot"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/bg_card"
+    android:padding="16dp"
+    android:layout_margin="8dp">
+
+    <ImageView
+        android:id="@+id/ivProduct"
+        android:layout_width="match_parent"
+        android:layout_height="160dp"
+        android:scaleType="centerCrop"
+        android:background="@drawable/bg_field"
+        android:src="@drawable/ic_placeholder" />
+
+    <EditText
+        android:id="@+id/etImageUrl"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="URL изображения"
+        android:visibility="gone"
+        android:inputType="textUri"/>
+
+    <TextView
+        android:id="@+id/tvName"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Название"
+        android:textStyle="bold"
+        android:textSize="18sp"
+        android:layout_marginTop="8dp"/>
+
+    <EditText
+        android:id="@+id/etName"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Название"
+        android:visibility="gone"
+        android:inputType="text"/>
+
+    <TextView
+        android:id="@+id/tvDesc"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Описание"
+        android:layout_marginTop="4dp"/>
+
+    <EditText
+        android:id="@+id/etDesc"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Описание"
+        android:visibility="gone"
+        android:inputType="textMultiLine"/>
+
+    <!-- Вес десерта -->
+    <TextView
+        android:id="@+id/tvWeight"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="60 г"
+        android:textSize="15sp"
+        android:layout_marginTop="2dp"/>
+    <EditText
+        android:id="@+id/etWeight"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:hint="Вес (г)"
+        android:visibility="gone"
+        android:inputType="numberDecimal"/>
+
+    <TextView
+        android:id="@+id/tvPrice"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="130 ₽"
+        android:textStyle="bold"
+        android:textSize="16sp"
+        android:layout_marginTop="4dp"/>
+
+    <EditText
+        android:id="@+id/etPrice"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:hint="Цена"
+        android:visibility="gone"
+        android:inputType="numberDecimal"/>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="end"
+        android:layout_marginTop="8dp">
+
+        <Button
+            android:id="@+id/btnEdit"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Редактировать"/>
+
+        <Button
+            android:id="@+id/btnSave"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Сохранить"
+            android:visibility="gone"
+            android:layout_marginStart="8dp"/>
+    </LinearLayout>
+</LinearLayout>

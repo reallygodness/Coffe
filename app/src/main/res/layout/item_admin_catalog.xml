@@ -1,0 +1,176 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/cardRoot"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="8dp"
+    app:cardElevation="2dp"
+    app:cardCornerRadius="16dp">
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <!-- VIEW MODE -->
+        <LinearLayout
+            android:id="@+id/viewModeBlock"
+            android:orientation="vertical"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="16dp"
+            android:visibility="visible">
+
+            <ImageView
+                android:id="@+id/ivProductImage"
+                android:layout_width="match_parent"
+                android:layout_height="160dp"
+                android:scaleType="centerCrop"
+                android:background="@drawable/bg_field"
+                android:contentDescription="Фото" />
+
+            <TextView
+                android:id="@+id/tvProductName"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Название"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:layout_marginTop="12dp"/>
+
+            <TextView
+                android:id="@+id/tvProductDesc"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Описание"
+                android:layout_marginTop="4dp"/>
+
+
+            <TextView
+                android:id="@+id/tvProductPrice"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="200 ₽"
+                android:textStyle="bold"
+                android:textSize="18sp"
+                android:layout_marginTop="6dp"/>
+
+            <TextView
+                android:id="@+id/tvProductWeight"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Вес: 250 г"
+                android:textSize="15sp"
+                android:layout_marginTop="4dp"
+                android:visibility="gone"/>
+
+            <ImageButton
+                android:id="@+id/btnEdit"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:layout_gravity="end"
+                android:background="@android:color/transparent"
+                android:contentDescription="Редактировать"
+                android:src="@drawable/ic_edit"
+                app:tint="@color/black"
+                tools:ignore="TouchTargetSizeCheck" />
+        </LinearLayout>
+
+        <!-- EDIT MODE -->
+        <LinearLayout
+            android:id="@+id/editModeBlock"
+            android:orientation="vertical"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="16dp"
+            android:visibility="gone"
+            android:background="#FFF8E6">
+            <Spinner
+                android:id="@+id/spCategorySelector"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:visibility="gone"
+                android:layout_marginBottom="8dp"/>
+
+            <EditText
+                android:id="@+id/etProductName"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Название"
+                android:textStyle="bold"
+                android:textSize="18sp" />
+
+            <EditText
+                android:id="@+id/etProductDesc"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Описание"
+                android:inputType="textMultiLine"
+                android:minLines="2"
+                android:maxLines="4"
+                android:layout_marginTop="4dp"/>
+
+            <EditText
+                android:id="@+id/etProductImageUrl"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="URL изображения"
+                android:inputType="textUri"
+                android:layout_marginTop="4dp"/>
+
+            <EditText
+                android:id="@+id/etProductPrice"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Цена, ₽"
+                android:inputType="numberDecimal"
+                android:layout_marginTop="4dp"/>
+
+            <EditText
+                android:id="@+id/etProductWeight"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Вес (г)"
+                android:inputType="number"
+                android:layout_marginTop="4dp"
+                android:visibility="gone"/>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="end"
+                android:layout_marginTop="8dp">
+
+                <ImageButton
+                    android:id="@+id/btnSave"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:src="@drawable/ic_check"
+                    android:background="@android:color/transparent"
+                    android:contentDescription="Сохранить"
+                    app:tint="@color/green" />
+
+                <ImageButton
+                    android:id="@+id/btnCancel"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:src="@drawable/ic_close"
+                    android:background="@android:color/transparent"
+                    android:contentDescription="Отмена"
+                    app:tint="@color/red" />
+
+                <ImageButton
+                    android:id="@+id/btnDelete"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:src="@drawable/ic_delete"
+                    android:background="@android:color/transparent"
+                    android:contentDescription="Удалить"
+                    app:tint="@color/red" />
+
+            </LinearLayout>
+        </LinearLayout>
+    </FrameLayout>
+</androidx.cardview.widget.CardView>

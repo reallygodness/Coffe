@@ -153,7 +153,7 @@ public class ProfileActivity extends AppCompatActivity {
                 updatedUserMap.put("lastName", user.getLastName());
                 updatedUserMap.put("email", user.getEmail());
                 // FIX: Всегда передавать актуальный roleId!
-                updatedUserMap.put("roleId", currentRoleId);
+                updatedUserMap.put("roleId", user.getRoleId()); // ОБЯЗАТЕЛЬНО!
                 if (user.getProfileImage() != null) {
                     updatedUserMap.put("profileImage", Base64.encodeToString(user.getProfileImage(), Base64.DEFAULT));
                 }

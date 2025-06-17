@@ -22,6 +22,7 @@ public class MainActivity extends AppCompatActivity {
     @SuppressLint("NonConstantResourceId")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
         // Отключаем ночной режим
         AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
 
@@ -37,9 +38,16 @@ public class MainActivity extends AppCompatActivity {
             finish();
             return;
         }
-        // ------------------------------------------------------
 
-        super.onCreate(savedInstanceState);
+        if (roleId == 3) {
+            // Это курьер — открываем Admin
+            Intent intent = new Intent(this, AdminMainActivity.class);
+            intent.putExtra("userId", userId);
+            startActivity(intent);
+            finish();
+            return;
+        }
+        // ------------------------------------------------------
 
         // Edge-to-edge
         EdgeToEdge.enable(this);

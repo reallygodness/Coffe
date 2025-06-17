@@ -231,11 +231,11 @@
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnAddToCart"
+                style="@style/Widget.MaterialComponents.Button"
                 android:layout_width="250dp"
                 android:layout_height="50dp"
-                android:text="В корзину"
-                style="@style/Widget.MaterialComponents.Button"
-                android:backgroundTint="#C67C4E"/>
+                android:backgroundTint="#C67C4E"
+                android:text="В корзину" />
         </LinearLayout>
     </LinearLayout>
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

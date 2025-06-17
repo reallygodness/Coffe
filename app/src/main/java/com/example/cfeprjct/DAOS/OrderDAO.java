@@ -24,6 +24,9 @@ public interface OrderDAO {
     @Query("SELECT * FROM orders ORDER BY createdAt DESC")
     List<Order> getAllSync();
 
+    @Query("SELECT * FROM `orders` WHERE orderId = :orderId LIMIT 1")
+    Order getOrderById(int orderId);
+
     @Query("DELETE FROM orders")
     void clearAll();
 

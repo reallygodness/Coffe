@@ -96,6 +96,9 @@ public class LoginActivity extends AppCompatActivity {
                         Intent intent;
                         if (user.getRoleId() == 2) {
                             intent = new Intent(LoginActivity.this, CourierMainActivity.class);
+                        }
+                        if (user.getRoleId() == 3 ) {
+                            intent = new Intent(LoginActivity.this, AdminMainActivity.class);
                         } else {
                             intent = new Intent(LoginActivity.this, MainActivity.class);
                         }

@@ -25,6 +25,8 @@ import com.example.cfeprjct.Entities.OrderedDessert;
 import com.example.cfeprjct.Entities.OrderedDish;
 import com.example.cfeprjct.Entities.OrderedDrink;
 import com.example.cfeprjct.R;
+import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -85,39 +87,108 @@ public class OrderAdapter extends ListAdapter<Order, OrderAdapter.VH> {
         Executors.newSingleThreadExecutor().execute(() -> {
             List<CartItem> items = new ArrayList<>();
 
+            boolean hasPositions = false; // был ли найден хотя бы 1 товар
+
             for (OrderedDrink od : db.orderedDrinkDAO().getByOrderId(order.getOrderId())) {
                 var d = db.drinkDAO().getById(od.getDrinkId());
-                CartItem ci = new CartItem();
-                ci.setProductType("drink");
-                ci.setTitle(d.getName());
-                ci.setImageUrl(d.getImageUrl());
-                ci.setQuantity(od.getQuantity());
-                ci.setUnitPrice(db.priceListDAO().getLatestPriceForDrink(d.getDrinkId()));
-                ci.setSize(od.getSize());
-                items.add(ci);
+                if (d != null) {
+                    CartItem ci = new CartItem();
+                    ci.setProductType("drink");
+                    ci.setTitle(d.getName());
+                    ci.setImageUrl(d.getImageUrl());
+                    ci.setQuantity(od.getQuantity());
+                    ci.setUnitPrice(db.priceListDAO().getLatestPriceForDrink(d.getDrinkId()));
+                    ci.setSize(od.getSize());
+                    items.add(ci);
+                    hasPositions = true;
+                }
             }
             for (OrderedDish od : db.orderedDishDAO().getByOrderId(order.getOrderId())) {
                 var d = db.dishDAO().getById(od.getDishId());
-                CartItem ci = new CartItem();
-                ci.setProductType("dish");
-                ci.setTitle(d.getName());
-                ci.setImageUrl(d.getImageUrl());
-                ci.setQuantity(od.getQuantity());
-                ci.setUnitPrice(db.priceListDAO().getLatestPriceForDish(d.getDishId()));
-                ci.setSize(od.getSize());
-                items.add(ci);
+                if (d != null) {
+                    CartItem ci = new CartItem();
+                    ci.setProductType("dish");
+                    ci.setTitle(d.getName());
+                    ci.setImageUrl(d.getImageUrl());
+                    ci.setQuantity(od.getQuantity());
+                    ci.setUnitPrice(db.priceListDAO().getLatestPriceForDish(d.getDishId()));
+                    ci.setSize(od.getSize());
+                    items.add(ci);
+                    hasPositions = true;
+                }
             }
             for (OrderedDessert od : db.orderedDessertDAO().getByOrderId(order.getOrderId())) {
                 var d = db.dessertDAO().getById(od.getDessertId());
-                CartItem ci = new CartItem();
-                ci.setProductType("dessert");
-                ci.setTitle(d.getName());
-                ci.setImageUrl(d.getImageUrl());
-                ci.setQuantity(od.getQuantity());
-                ci.setUnitPrice(db.priceListDAO().getLatestPriceForDessert(d.getDessertId()));
-                ci.setSize(od.getSize());
-                items.add(ci);
+                if (d != null) {
+                    CartItem ci = new CartItem();
+                    ci.setProductType("dessert");
+                    ci.setTitle(d.getName());
+                    ci.setImageUrl(d.getImageUrl());
+                    ci.setQuantity(od.getQuantity());
+                    ci.setUnitPrice(db.priceListDAO().getLatestPriceForDessert(d.getDessertId()));
+                    ci.setSize(od.getSize());
+                    items.add(ci);
+                    hasPositions = true;
+                }
             }
+
+            // Если ни одного товара не найдено, пробуем обновить позиции заказа из Firestore
+            if (!hasPositions) {
+                FirebaseFirestore firestore = FirebaseFirestore.getInstance();
+                firestore.collection("orders")
+                        .document(String.valueOf(order.getOrderId()))
+                        .collection("drinks")
+                        .get()
+                        .addOnSuccessListener(drinkSnap -> {
+                            Executors.newSingleThreadExecutor().execute(() -> {
+                                for (DocumentSnapshot d : drinkSnap.getDocuments()) {
+                                    OrderedDrink od = new OrderedDrink();
+                                    od.setOrderedDrinkId(d.getLong("orderedDrinkId").intValue());
+                                    od.setOrderId(d.getLong("orderId").intValue());
+                                    od.setDrinkId(d.getLong("drinkId").intValue());
+                                    od.setQuantity(d.getLong("quantity").intValue());
+                                    od.setSize(d.getLong("size").intValue());
+                                    db.orderedDrinkDAO().insert(od);
+                                }
+                            });
+                        });
+                firestore.collection("orders")
+                        .document(String.valueOf(order.getOrderId()))
+                        .collection("dishes")
+                        .get()
+                        .addOnSuccessListener(dishSnap -> {
+                            Executors.newSingleThreadExecutor().execute(() -> {
+                                for (DocumentSnapshot d : dishSnap.getDocuments()) {
+                                    OrderedDish od = new OrderedDish();
+                                    od.setOrderedDishId(d.getLong("orderedDishId").intValue());
+                                    od.setOrderId(d.getLong("orderId").intValue());
+                                    od.setDishId(d.getLong("dishId").intValue());
+                                    od.setQuantity(d.getLong("quantity").intValue());
+                                    od.setSize(d.getLong("size").intValue());
+                                    db.orderedDishDAO().insert(od);
+                                }
+                            });
+                        });
+                firestore.collection("orders")
+                        .document(String.valueOf(order.getOrderId()))
+                        .collection("desserts")
+                        .get()
+                        .addOnSuccessListener(desSnap -> {
+                            Executors.newSingleThreadExecutor().execute(() -> {
+                                for (DocumentSnapshot d : desSnap.getDocuments()) {
+                                    OrderedDessert od = new OrderedDessert();
+                                    od.setOrderedDessertId(d.getLong("orderedDessertId").intValue());
+                                    od.setOrderId(d.getLong("orderId").intValue());
+                                    od.setDessertId(d.getLong("dessertId").intValue());
+                                    od.setQuantity(d.getLong("quantity").intValue());
+                                    od.setSize(d.getLong("size").intValue());
+                                    db.orderedDessertDAO().insert(od);
+                                }
+                            });
+                        });
+                // После синхронизации можно обновить адаптер (например, через notifyDataSetChanged)
+            }
+
 
             holder.itemView.post(() -> {
                 for (CartItem ci : items) {
@@ -161,51 +232,44 @@ public class OrderAdapter extends ListAdapter<Order, OrderAdapter.VH> {
 
         // ======= 4) Логика таймера статусов СИНХРОНИЗИРОВАНА =======
         final Handler handler = new Handler(holder.itemView.getContext().getMainLooper());
-        handler.removeCallbacksAndMessages(null); // очищаем старые таймеры
-
         Runnable runnable = new Runnable() {
             @Override
             public void run() {
                 long now = System.currentTimeMillis();
 
                 if (order.getStatusId() == 1) {
-                    // В готовке — если курьер ещё не взял, отсчёт с createdAt; если взял — с courierTakeTime
-                    long start = order.getCourierTakeTime() != null ? order.getCourierTakeTime() : order.getCreatedAt();
+                    long elapsed = now - order.getCreatedAt();
                     long prepMs = 5 * 60_000;
-                    long rem = (start + prepMs) - now;
-                    if (rem > 0) {
+                    if (elapsed < prepMs) {
                         holder.tvStatus.setText("В готовке");
-                        holder.tvTimer.setVisibility(View.VISIBLE);
+                        long rem = prepMs - elapsed;
                         int m = (int) (rem / 60_000);
                         int s = (int) ((rem % 60_000) / 1000);
-                        holder.tvTimer.setText(String.format("%02d:%02d", m, s));
+                        holder.tvTimer.setVisibility(View.VISIBLE);
+                        holder.tvTimer.setText(String.format("Готовка: %02d:%02d", m, s));
                         handler.postDelayed(this, 1000);
                     } else {
-                        // Если время истекло — автоматом статус меняется Firestore, тут можно статус не менять
-                        holder.tvStatus.setText("Готово к доставке");
+                        // Здесь можно обновить флаг в заказе, чтобы он стал доступен курьерам (например, через Firestore)
+                        holder.tvStatus.setText("Ожидает курьера");
                         holder.tvTimer.setVisibility(View.GONE);
                     }
-                } else if (order.getStatusId() == 2) {
-                    // В доставке — отсчёт с deliveryStartTime
-                    long start = order.getDeliveryStartTime() != null ? order.getDeliveryStartTime() : now;
+                } else if (order.getStatusId() == 2 && order.getDeliveryStartTime() != null) {
+                    long elapsed = now - order.getDeliveryStartTime();
                     long delivMs = 20 * 60_000;
-                    long rem = (start + delivMs) - now;
-                    if (rem > 0) {
+                    if (elapsed < delivMs) {
                         holder.tvStatus.setText("В доставке");
-                        holder.tvTimer.setVisibility(View.VISIBLE);
+                        long rem = delivMs - elapsed;
                         int m = (int) (rem / 60_000);
                         int s = (int) ((rem % 60_000) / 1000);
-                        holder.tvTimer.setText(String.format("%02d:%02d", m, s));
+                        holder.tvTimer.setVisibility(View.VISIBLE);
+                        holder.tvTimer.setText(String.format("Доставка: %02d:%02d", m, s));
                         handler.postDelayed(this, 1000);
                     } else {
-                        holder.tvStatus.setText("Доставлен и оплачен");
+                        holder.tvStatus.setText("В доставке (ожидается подтверждение)");
                         holder.tvTimer.setVisibility(View.GONE);
                     }
                 } else if (order.getStatusId() == 3) {
                     holder.tvStatus.setText("Доставлен и оплачен");
-                    holder.tvTimer.setVisibility(View.GONE);
-                } else {
-                    holder.tvStatus.setText("Статус: —");
                     holder.tvTimer.setVisibility(View.GONE);
                 }
             }
@@ -213,7 +277,7 @@ public class OrderAdapter extends ListAdapter<Order, OrderAdapter.VH> {
         handler.post(runnable);
     }
 
-    static class VH extends RecyclerView.ViewHolder {
+        static class VH extends RecyclerView.ViewHolder {
         TextView     tvOrderId, tvDate, tvStatus, tvPayment, tvAddress, tvTimer;
         LinearLayout itemsContainer;
         VH(View v) {

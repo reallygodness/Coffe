@@ -1,0 +1,37 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:padding="16dp"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <Spinner
+        android:id="@+id/spinnerReportType"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="16dp"
+        android:minHeight="48dp"
+        android:paddingTop="25dp" />
+
+    <Button
+        android:id="@+id/btnGenerateReport"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Сформировать"
+        android:backgroundTint="@color/orange_button"/>
+
+    <TextView
+        android:id="@+id/tvReportResult"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Результаты отчёта появятся здесь"
+        android:paddingTop="24dp"
+        android:textSize="16sp"/>
+
+<!--    <androidx.recyclerview.widget.RecyclerView-->
+<!--        android:id="@+id/rvReportProducts"-->
+<!--        android:layout_width="match_parent"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        android:visibility="gone"-->
+<!--        android:layout_marginTop="12dp"/>-->
+
+</LinearLayout>

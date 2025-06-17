@@ -31,9 +31,11 @@ import com.example.cfeprjct.Entities.OrderedDrink;
 import com.example.cfeprjct.R;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.ListenerRegistration;
 import com.google.firebase.firestore.QuerySnapshot;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -58,6 +60,9 @@ public class OrdersFragment extends Fragment {
 
     private static final String PREFS = "app_prefs";               // ← имя SharedPreferences
     private static final String KEY_LAST_USER = "lastUserId";
+
+    // Потокобезопасный список слушателей!
+    private final List<ListenerRegistration> orderListeners = Collections.synchronizedList(new ArrayList<>());
 
     @Nullable
     @Override
@@ -95,8 +100,6 @@ public class OrdersFragment extends Fragment {
         }
         // → конец изменения
 
-
-
         // 2) Выполняем в фоне: экспорт локальных → импорт облачных
         Executors.newSingleThreadExecutor().execute(() -> {
             // 2.1. Статусы
@@ -124,8 +127,7 @@ public class OrdersFragment extends Fragment {
                 firestore
                         .collection("orders")
                         .document(docId)
-                        .set(om);
-
+                        .set(om, com.google.firebase.firestore.SetOptions.merge());
                 // экспорт позиций
                 exportOrderPositions(o.getOrderId());
             }
@@ -150,11 +152,27 @@ public class OrdersFragment extends Fragment {
                     tvEmptyOrders.setVisibility(
                             orders.isEmpty() ? View.VISIBLE : View.GONE
                     );
+                    clearOrderListeners();
+                    subscribeToOrderStatusUpdates();
                 });
             });
         });
 
         return view;
+    }
+    private void clearOrderListeners() {
+        synchronized (orderListeners) {
+            for (ListenerRegistration l : orderListeners) {
+                l.remove();
+            }
+            orderListeners.clear();
+        }
+    }
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        clearOrderListeners();
     }
 
     /** Выгружаем в Firestore позиции одного заказа */
@@ -211,22 +229,43 @@ public class OrdersFragment extends Fragment {
     private void onOrdersFetchedFromCloud(QuerySnapshot snap) {
         Executors.newSingleThreadExecutor().execute(() -> {
             for (DocumentSnapshot doc : snap.getDocuments()) {
-                Order o = new Order();
-                o.setOrderId(doc.getLong("orderId").intValue());
-                o.setUserId(    doc.getString("userId"));
-                o.setCreatedAt( doc.getLong("createdAt"));
-                o.setTotalPrice(doc.getDouble("totalPrice").floatValue());
-                o.setStatusId(  doc.getLong("statusId").intValue());
-                orderDAO.insertOrder(o);
+                int orderId = doc.getLong("orderId").intValue();
+                // Проверяем, есть ли уже заказ локально
+                Order existing = orderDAO.getOrderById(orderId);
+                if (existing == null) {
+                    Order o = new Order();
+                    o.setOrderId(orderId);
+                    o.setUserId(doc.getString("userId"));
+                    o.setCreatedAt(doc.getLong("createdAt"));
+                    o.setTotalPrice(doc.getDouble("totalPrice").floatValue());
+                    o.setStatusId(doc.getLong("statusId").intValue());
+                    orderDAO.insertOrder(o);
 
-                String orderDocId = doc.getId();
-                // импорт позиций
-                importOrderPositions(orderDocId);
+                    String orderDocId = doc.getId();
+                    // импорт позиций — только если заказа не было!
+                    importOrderPositions(orderDocId);
+                } else {
+                    // если заказ уже есть, просто обновляем статус
+                    Integer statusId = doc.getLong("statusId") != null ? doc.getLong("statusId").intValue() : null;
+                    if (statusId != null && existing.getStatusId() != statusId) {
+                        existing.setStatusId(statusId);
+                        orderDAO.insertOrder(existing);
+                    }
+                }
             }
         });
     }
 
+
     private void importOrderPositions(String orderDocId) {
+        int orderId = Integer.parseInt(orderDocId);
+        // УДАЛЯЕМ только если действительно импортируем заказ (т.е. заказа ещё не было), иначе НЕ удаляем!
+        // Если ты вызываешь этот метод ТОЛЬКО при первом импорте заказа, оставь как есть.
+        // Если можешь вызываться при апдейте, тогда удали строки deleteByOrderId!
+        orderedDrinkDAO.deleteByOrderId(orderId);
+        orderedDishDAO.deleteByOrderId(orderId);
+        orderedDessertDAO.deleteByOrderId(orderId);
+
         // напитки
         firestore.collection("orders")
                 .document(orderDocId)
@@ -237,11 +276,15 @@ public class OrdersFragment extends Fragment {
                         for (DocumentSnapshot d : drinkSnap.getDocuments()) {
                             OrderedDrink od = new OrderedDrink();
                             od.setOrderedDrinkId(d.getLong("orderedDrinkId").intValue());
-                            od.setOrderId(       d.getLong("orderId").intValue());
-                            od.setDrinkId(       d.getLong("drinkId").intValue());
-                            od.setQuantity(      d.getLong("quantity").intValue());
-                            od.setSize(          d.getLong("size").intValue());
-                            orderedDrinkDAO.insert(od);
+                            od.setOrderId(d.getLong("orderId").intValue());
+                            od.setDrinkId(d.getLong("drinkId").intValue());
+                            od.setQuantity(d.getLong("quantity").intValue());
+                            od.setSize(d.getLong("size").intValue());
+
+                            // Проверка на дубликаты
+                            if (orderedDrinkDAO.getByOrderId(od.getOrderedDrinkId()) == null) {
+                                orderedDrinkDAO.insert(od);
+                            }
                         }
                     });
                 });
@@ -255,11 +298,14 @@ public class OrdersFragment extends Fragment {
                         for (DocumentSnapshot d : dishSnap.getDocuments()) {
                             OrderedDish od = new OrderedDish();
                             od.setOrderedDishId(d.getLong("orderedDishId").intValue());
-                            od.setOrderId(      d.getLong("orderId").intValue());
-                            od.setDishId(       d.getLong("dishId").intValue());
-                            od.setQuantity(     d.getLong("quantity").intValue());
-                            od.setSize(         d.getLong("size").intValue());
-                            orderedDishDAO.insert(od);
+                            od.setOrderId(d.getLong("orderId").intValue());
+                            od.setDishId(d.getLong("dishId").intValue());
+                            od.setQuantity(d.getLong("quantity").intValue());
+                            od.setSize(d.getLong("size").intValue());
+
+                            if (orderedDishDAO.getByOrderId(od.getOrderedDishId()) == null) {
+                                orderedDishDAO.insert(od);
+                            }
                         }
                     });
                 });
@@ -273,13 +319,60 @@ public class OrdersFragment extends Fragment {
                         for (DocumentSnapshot d : desSnap.getDocuments()) {
                             OrderedDessert od = new OrderedDessert();
                             od.setOrderedDessertId(d.getLong("orderedDessertId").intValue());
-                            od.setOrderId(         d.getLong("orderId").intValue());
-                            od.setDessertId(       d.getLong("dessertId").intValue());
-                            od.setQuantity(        d.getLong("quantity").intValue());
-                            od.setSize(            d.getLong("size").intValue());
-                            orderedDessertDAO.insert(od);
+                            od.setOrderId(d.getLong("orderId").intValue());
+                            od.setDessertId(d.getLong("dessertId").intValue());
+                            od.setQuantity(d.getLong("quantity").intValue());
+                            od.setSize(d.getLong("size").intValue());
+                            if (orderedDessertDAO.getByOrderId(od.getOrderedDessertId()) == null) {
+                                orderedDessertDAO.insert(od);
+                            }
                         }
                     });
                 });
     }
+
+
+    private void subscribeToOrderStatusUpdates() {
+        FirebaseFirestore firestore = FirebaseFirestore.getInstance();
+        new Thread(() -> {
+            List<Order> orders = orderDAO.getAllSync();
+            synchronized (orderListeners) {
+                for (Order order : orders) {
+                    ListenerRegistration listener = firestore.collection("orders")
+                            .document(String.valueOf(order.getOrderId()))
+                            .addSnapshotListener((doc, error) -> {
+                                if (error != null || doc == null || !doc.exists()) return;
+                                Integer statusId = doc.getLong("statusId") != null ? doc.getLong("statusId").intValue() : null;
+                                Long deliveredTime = doc.getLong("deliveredTime");
+                                Long deliveryStartTime = doc.getLong("deliveryStartTime");
+
+                                if (statusId != null) {
+                                    Executors.newSingleThreadExecutor().execute(() -> {
+                                        Order localOrder = orderDAO.getOrderById(order.getOrderId());
+                                        if (localOrder != null) {
+                                            boolean changed = false;
+                                            if (localOrder.getStatusId() != statusId) {
+                                                localOrder.setStatusId(statusId);
+                                                changed = true;
+                                            }
+                                            if (deliveredTime != null && (localOrder.getDeliveredTime() == null || !deliveredTime.equals(localOrder.getDeliveredTime()))) {
+                                                localOrder.setDeliveredTime(deliveredTime);
+                                                changed = true;
+                                            }
+                                            if (deliveryStartTime != null && (localOrder.getDeliveryStartTime() == null || !deliveryStartTime.equals(localOrder.getDeliveryStartTime()))) {
+                                                localOrder.setDeliveryStartTime(deliveryStartTime);
+                                                changed = true;
+                                            }
+                                            if (changed) orderDAO.insertOrder(localOrder); // Только upsert, не трогать позиции!
+                                        }
+                                    });
+                                }
+                            });
+                    orderListeners.add(listener);
+                }
+            }
+        }).start();
+    }
+
+
 }

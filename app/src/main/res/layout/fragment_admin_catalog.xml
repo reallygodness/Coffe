@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:paddingTop="25dp">
+
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <!-- Кнопки категорий -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:padding="12dp"
+            android:gravity="center_horizontal">
+
+            <Button
+                android:id="@+id/btnDrinks"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_width="wrap_content"
+                android:layout_height="48dp"
+                android:layout_marginEnd="8dp"
+                android:text="КОФЕ И НАПИТКИ" />
+
+            <Button
+                android:id="@+id/btnDishes"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_width="wrap_content"
+                android:layout_height="48dp"
+                android:layout_marginEnd="8dp"
+                android:text="БЛЮДА" />
+
+            <Button
+                android:id="@+id/btnDesserts"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_width="wrap_content"
+                android:layout_height="48dp"
+                android:text="ДЕСЕРТЫ" />
+        </LinearLayout>
+
+        <!-- КНОПКА "ДОБАВИТЬ ТОВАР" -->
+        <Button
+            android:id="@+id/btnAddProduct"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Добавить товар"
+            android:textAllCaps="false"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:layout_marginBottom="8dp"
+            android:backgroundTint="#C67C4E"
+            android:textColor="@android:color/white"
+            style="@style/Widget.MaterialComponents.Button" />
+
+        <!-- Список каталога -->
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvAdminCatalog"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:clipToPadding="false"
+            android:contentDescription="@string/catalog_recycler_desc"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp"
+            android:paddingBottom="100dp"/>
+    </LinearLayout>
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

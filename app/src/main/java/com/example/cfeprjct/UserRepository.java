@@ -169,9 +169,9 @@ public class UserRepository {
                                 cloudUser.setPhoneNumber(phoneNumber);
                                 cloudUser.setPassword(storedHash);
 
-                                // Получаем roleId из Firestore (или по умолчанию 1)
+                                // ДЛЯ НАДЁЖНОСТИ всегда явно ставь roleId (и для админов/курьеров, и для пользователей)
                                 Long role = snapshot.getLong("roleId");
-                                cloudUser.setRoleId(role != null ? role.intValue() : 1);
+                                cloudUser.setRoleId(role != null ? role.intValue() : 1); // 1 — пользователь по умолчанию
 
                                 String pi = snapshot.getString("profileImage");
                                 if (pi != null) {

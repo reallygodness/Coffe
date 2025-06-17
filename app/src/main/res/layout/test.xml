@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_margin="8dp"
+    app:cardCornerRadius="8dp"
+    app:cardElevation="2dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="12dp"
+        android:gravity="center_vertical">
+
+        <!-- Изображение товара -->
+        <ImageView
+            android:id="@+id/itemImage"
+            android:layout_width="64dp"
+            android:layout_height="64dp"
+            android:scaleType="centerCrop"
+            android:src="@drawable/ic_placeholder"/>
+
+        <!-- Описание: название, размер/вес, цена -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:layout_marginStart="12dp">
+
+            <TextView
+                android:id="@+id/itemTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Название товара"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="#212121"/>
+
+            <TextView
+                android:id="@+id/itemSize"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Вес: 200 г"
+                android:textSize="14sp"
+                android:textColor="#757575"
+                android:layout_marginTop="4dp"/>
+
+            <TextView
+                android:id="@+id/itemPrice"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Цена₽"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:textColor="#2F4B4E"
+                android:layout_marginTop="4dp"/>
+
+        </LinearLayout>
+
+        <!-- Контролы количества + кнопка удаления -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center_horizontal">
+
+            <!-- Блок уменьшения/количества/увеличения -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"/>
+
+            <!-- Кнопка удаления под блоком количества -->
+        </LinearLayout>
+
+    </LinearLayout>
+</androidx.cardview.widget.CardView>

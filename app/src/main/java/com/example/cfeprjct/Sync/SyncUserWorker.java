@@ -49,6 +49,7 @@ public class SyncUserWorker extends Worker {
             m.put("lastName",  u.getLastName());
             m.put("email",     u.getEmail());
             m.put("phoneNumber", u.getPhoneNumber());
+            m.put("roleId", u.getRoleId());
             if (u.getPassword() != null)       m.put("password",      u.getPassword());
             if (u.getProfileImage() != null) {
                 String b64 = Base64.encodeToString(u.getProfileImage(), Base64.DEFAULT);

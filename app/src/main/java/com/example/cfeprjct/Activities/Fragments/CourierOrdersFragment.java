@@ -1,7 +1,6 @@
 package com.example.cfeprjct.Activities.Fragments;
 
 import android.os.Bundle;
-import android.os.Handler;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -13,6 +12,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.cfeprjct.Adapters.CourierOrdersAdapter;
+import com.example.cfeprjct.AppDatabase;
 import com.example.cfeprjct.Entities.Address;
 import com.example.cfeprjct.Entities.Order;
 import com.example.cfeprjct.R;
@@ -38,7 +38,6 @@ public class CourierOrdersFragment extends Fragment {
     private String courierId;
     private com.google.firebase.firestore.ListenerRegistration ordersListener;
 
-
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
@@ -63,70 +62,81 @@ public class CourierOrdersFragment extends Fragment {
         adapter.setCourierId(courierId);
         recyclerView.setAdapter(adapter);
 
-        loadOrders();
-
-        new Handler().postDelayed(this::loadOrders, 30000);
+        subscribeToOrderUpdates();
 
         return view;
     }
 
-    private void loadOrders() {
+    @Override
+    public void onDestroyView() {
+        if (ordersListener != null) {
+            ordersListener.remove();
+            ordersListener = null;
+        }
+        super.onDestroyView();
+    }
+
+    private void subscribeToOrderUpdates() {
+        if (ordersListener != null) {
+            ordersListener.remove();
+        }
         FirebaseFirestore db = FirebaseFirestore.getInstance();
-        db.collection("orders")
-                .whereIn("statusId", List.of(1, 2))
-                .get()
-                .addOnSuccessListener(queryDocumentSnapshots -> {
+
+        ordersListener = db.collection("orders")
+                .whereIn("statusId", List.of(1, 2)) // Только актуальные
+                .addSnapshotListener((queryDocumentSnapshots, e) -> {
+                    if (e != null) {
+                        showError("Ошибка загрузки заказов: " + e.getMessage());
+                        return;
+                    }
                     ordersList.clear();
                     Set<String> userIds = new HashSet<>();
                     long now = System.currentTimeMillis();
 
-                    Order activeOrder = null;
+                    // 1. Сначала ищем активный заказ курьера (statusId==2 и courierId==мой)
+                    Order myActiveOrder = null;
                     for (QueryDocumentSnapshot doc : queryDocumentSnapshots) {
                         Order order = doc.toObject(Order.class);
                         order.setFirestoreOrderId(doc.getId());
-
                         if (order.getStatusId() == 2 && courierId.equals(order.getCourierId())) {
-                            activeOrder = order;
-                            break;
-                        }
-                        if (order.getStatusId() == 1 && courierId.equals(order.getCourierId())) {
-                            activeOrder = order;
+                            myActiveOrder = order;
                             break;
                         }
                     }
 
-                    if (activeOrder != null) {
-                        ordersList.add(activeOrder);
-                        if (activeOrder.getUserId() != null) userIds.add(activeOrder.getUserId());
+                    if (myActiveOrder != null) {
+                        // Есть активный заказ - показываем только его!
+                        ordersList.add(myActiveOrder);
+                        if (myActiveOrder.getUserId() != null) userIds.add(myActiveOrder.getUserId());
                     } else {
+                        // Нет активного - можно брать новый через 5 минут готовки
                         for (QueryDocumentSnapshot doc : queryDocumentSnapshots) {
                             Order order = doc.toObject(Order.class);
                             order.setFirestoreOrderId(doc.getId());
-
+                            if (order.getStatusId() >= 3) continue;
                             if (order.getStatusId() == 1 && (order.getCourierId() == null || order.getCourierId().isEmpty())) {
+                                long elapsed = now - order.getCreatedAt();
+                                if (elapsed >= 5 * 60 * 1000) {
+                                    ordersList.add(order);
+                                    if (order.getUserId() != null) userIds.add(order.getUserId());
+                                }
+                            }
+                            // Можно оставить блок с "Взятые этим курьером" если надо показывать таймер на 5 минут
+                            else if (order.getStatusId() == 1 && courierId.equals(order.getCourierId())) {
+                                long takeTime = order.getCourierTakeTime() != null ? order.getCourierTakeTime() : order.getCreatedAt();
                                 ordersList.add(order);
                                 if (order.getUserId() != null) userIds.add(order.getUserId());
                             }
                         }
                     }
-
                     loadUserNamesAndAddresses(new ArrayList<>(userIds));
-                })
-                .addOnFailureListener(e -> {
-                    Toast.makeText(getContext(), "Ошибка загрузки заказов: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                 });
     }
-
-
 
 
     private void showError(String msg) {
         Toast.makeText(getContext(), "Ошибка загрузки заказов: " + msg, Toast.LENGTH_SHORT).show();
     }
-
-
-
-
 
     private void loadUserNamesAndAddresses(List<String> userIds) {
         if (userIds.isEmpty()) {
@@ -176,46 +186,58 @@ public class CourierOrdersFragment extends Fragment {
                 });
     }
 
-    /** Курьер берёт заказ: courierId, courierTakeTime, статус не меняем! */
+    /** Курьер берёт заказ: обновляем courierId, statusId, deliveryStartTime */
     private void takeOrder(Order order) {
         long now = System.currentTimeMillis();
         FirebaseFirestore db = FirebaseFirestore.getInstance();
 
-        // 1. Ставим courierId и courierTakeTime и меняем статус только в Firestore!
-        db.collection("orders").document(order.getFirestoreOrderId())
-                .update(
-                        "courierId", courierId,
-                        "courierTakeTime", now,
-                        "statusId", 1 // пока не меняем на 2!
-                ).addOnSuccessListener(aVoid -> {
-                    // 2. Сохраняем в локальный Room (НЕОБЯЗАТЕЛЬНО, если не используешь Room для заказов у курьера)
-                    // Если используешь — обнови локальный объект
+        // 1. Обновляем заказ в Firestore (courierId, statusId=2, deliveryStartTime)
+        db.collection("orders")
+                .document(order.getFirestoreOrderId())
+                .update("courierId", courierId,
+                        "statusId", 2,
+                        "deliveryStartTime", now)
+                .addOnSuccessListener(aVoid -> {
+                    // 2. Обновляем заказ локально в Room, если используешь локальное хранение
                     new Thread(() -> {
-                        order.setCourierId(courierId);
-                        order.setCourierTakeTime(now);
-                        order.setStatusId(1);
-                        // orderDao.updateOrder(order); // если есть локальная таблица заказов
+                        AppDatabase localDb = AppDatabase.getInstance(requireContext());
+                        Order localOrder = localDb.orderDAO().getOrderById(order.getOrderId());
+                        if (localOrder != null) {
+                            localOrder.setCourierId(courierId);
+                            localOrder.setStatusId(2);
+                            localOrder.setDeliveryStartTime(now);
+                            localDb.orderDAO().insertOrder(localOrder);
+                        }
                     }).start();
 
-                    Toast.makeText(getContext(), "Заказ взят!", Toast.LENGTH_SHORT).show();
-                    loadOrders();
-                }).addOnFailureListener(e -> {
-                    Toast.makeText(getContext(), "Ошибка принятия заказа: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                });
+                    Toast.makeText(getContext(), "Заказ взят! Везите заказ.", Toast.LENGTH_SHORT).show();
+                })
+                .addOnFailureListener(e -> showError("Ошибка при взятии заказа: " + e.getMessage()));
     }
 
     /** Курьер отмечает "Доставлен" (статус = 3) */
     private void markOrderAsDelivered(Order order) {
+        long now = System.currentTimeMillis();
         FirebaseFirestore db = FirebaseFirestore.getInstance();
-        db.collection("orders").document(order.getFirestoreOrderId())
-                .update("statusId", 3, "deliveredTime", System.currentTimeMillis())
+
+        db.collection("orders")
+                .document(order.getFirestoreOrderId())
+                .update("statusId", 3, "deliveredTime", now)
                 .addOnSuccessListener(aVoid -> {
+                    // --- Сохраняем локально ---
+                    new Thread(() -> {
+                        AppDatabase localDb = AppDatabase.getInstance(requireContext());
+                        Order localOrder = localDb.orderDAO().getOrderById(order.getOrderId());
+                        if (localOrder != null) {
+                            localOrder.setStatusId(3);
+                            localOrder.setDeliveredTime(now);
+                            localDb.orderDAO().insertOrder(localOrder); // обновит статус в локальной БД
+                        }
+                    }).start();
+
                     Toast.makeText(getContext(), "Заказ отмечен как доставленный!", Toast.LENGTH_SHORT).show();
-                    loadOrders();
                 })
-                .addOnFailureListener(e -> showError(e.getMessage()));
+                .addOnFailureListener(e -> showError("Ошибка: " + e.getMessage()));
     }
-
-
 
 }
