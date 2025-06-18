@@ -57,7 +57,7 @@ public class SyncUserWorker extends Worker {
             }
             firestore.collection("users")
                     .document(u.getUserId())
-                    .set(m)
+                    .set(m, com.google.firebase.firestore.SetOptions.merge())
                     .addOnSuccessListener(a -> Log.d(TAG, "✅ синхронизирован " + u.getUserId()))
                     .addOnFailureListener(e -> Log.e(TAG, "❌ ошибка sync", e));
         }

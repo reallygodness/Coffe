@@ -55,6 +55,7 @@
         android:padding="16dp"/>
 
     <LinearLayout
+        android:id="@+id/LLcard"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
@@ -89,8 +90,6 @@
         android:textStyle="bold"
         android:gravity="center_horizontal"
         android:textColor="#2F4B4E"/>
-
-
 
     <!-- Кнопка оформления заказа -->
     <com.google.android.material.button.MaterialButton

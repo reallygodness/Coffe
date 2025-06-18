@@ -17,6 +17,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.Toast;
 import android.widget.TextView;
 
@@ -86,6 +87,8 @@ public class CartFragment extends Fragment {
 
     private EditText etUseBonuses;
 
+    private LinearLayout LLcard;
+
     private final Set<Integer> previousCartItemIds = new HashSet<>();
     private boolean hasAddress = false;
     private boolean cartLoadedFromCloud = false;
@@ -132,6 +135,7 @@ public class CartFragment extends Fragment {
         tvEmptyCart = view.findViewById(R.id.tvEmptyCart);
         tvAvailableBonuses = view.findViewById(R.id.tvAvailableBonuses);
         etUseBonuses = view.findViewById(R.id.etUseBonuses);
+        LLcard = view.findViewById(R.id.LLcard);
 
         // 4) RecyclerView
         rvCart.setLayoutManager(new LinearLayoutManager(requireContext()));
@@ -360,6 +364,7 @@ public class CartFragment extends Fragment {
             for (CartItem ci : items) cartSum += ci.getQuantity() * ci.getUnitPrice();
             if (items.isEmpty()) {
                 tvEmptyCart.setVisibility(View.VISIBLE);
+                LLcard.setVisibility(View.GONE);
                 tvTotal.setVisibility(View.GONE);
                 btnCheckout.setVisibility(View.GONE);
 

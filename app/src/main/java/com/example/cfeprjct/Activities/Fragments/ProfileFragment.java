@@ -36,6 +36,7 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.ListenerRegistration;
+import com.google.firebase.firestore.SetOptions;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -326,7 +327,7 @@ public class ProfileFragment extends Fragment {
             // 4) Отправка в Firestore
         firestore.collection("users")
                     .document(updated.getUserId())
-                    .set(map)
+                    .set(map, SetOptions.merge())
                     .addOnSuccessListener(aVoid -> {
                         if (!isAdded()) return;
                         Log.d("Firestore", "Профиль в облаке обновлён");

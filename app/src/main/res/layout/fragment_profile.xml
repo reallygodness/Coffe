@@ -61,7 +61,7 @@
         android:text="Номер телефона: "
         android:textColor="?android:textColorPrimary"
         android:textSize="18sp"
-        android:paddingBottom="8dp" />
+        android:paddingBottom="0dp" />
     <TextView
         android:id="@+id/tvBonusPoints"
         android:layout_width="match_parent"
