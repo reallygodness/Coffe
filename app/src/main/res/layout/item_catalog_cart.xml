@@ -34,15 +34,6 @@
                 android:src="@drawable/ic_placeholder"/>
 
             <!-- Контейнер для звёздочек рейтинга -->
-            <LinearLayout
-                android:id="@+id/ratingContainer"
-                android:orientation="horizontal"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_margin="8dp"
-                android:layout_gravity="top|start"
-                android:padding="4dp"
-                android:background="@drawable/bg_rating" />
         </FrameLayout>
 
         <!-- Заголовок -->

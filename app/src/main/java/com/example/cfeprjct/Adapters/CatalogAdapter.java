@@ -67,20 +67,20 @@ public class CatalogAdapter extends RecyclerView.Adapter<CatalogAdapter.ViewHold
             holder.imageView.setImageResource(R.drawable.ic_placeholder);
         }
 
-        // Рейтинг в виде звёздочек
-        holder.ratingContainer.removeAllViews();
-        Float ratingObj = item.getRating();
-        int fullStars = ratingObj != null ? ratingObj.intValue() : 0;
-        for (int i = 0; i < fullStars; i++) {
-            ImageView star = new ImageView(holder.ratingContainer.getContext());
-            star.setImageResource(R.drawable.ic_star);
-            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
-                    ViewGroup.LayoutParams.WRAP_CONTENT,
-                    ViewGroup.LayoutParams.WRAP_CONTENT);
-            lp.setMargins(2, 0, 2, 0);
-            star.setLayoutParams(lp);
-            holder.ratingContainer.addView(star);
-        }
+//        // Рейтинг в виде звёздочек
+//        holder.ratingContainer.removeAllViews();
+//        Float ratingObj = item.getRating();
+//        int fullStars = ratingObj != null ? ratingObj.intValue() : 0;
+//        for (int i = 0; i < fullStars; i++) {
+//            ImageView star = new ImageView(holder.ratingContainer.getContext());
+//            star.setImageResource(R.drawable.ic_star);
+//            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+//                    ViewGroup.LayoutParams.WRAP_CONTENT,
+//                    ViewGroup.LayoutParams.WRAP_CONTENT);
+//            lp.setMargins(2, 0, 2, 0);
+//            star.setLayoutParams(lp);
+//            holder.ratingContainer.addView(star);
+//        }
 
         // Клик по карточке
         holder.itemView.setOnClickListener(v -> {
@@ -112,7 +112,6 @@ public class CatalogAdapter extends RecyclerView.Adapter<CatalogAdapter.ViewHold
             priceTextView       = itemView.findViewById(R.id.itemPriceTextView);
             sizeTextView        = itemView.findViewById(R.id.itemSize);
             imageView           = itemView.findViewById(R.id.itemImageView);
-            ratingContainer     = itemView.findViewById(R.id.ratingContainer);
         }
     }
 }

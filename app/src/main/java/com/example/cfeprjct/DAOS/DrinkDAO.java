@@ -24,6 +24,10 @@ public interface DrinkDAO {
     @Query("SELECT * FROM drinks WHERE drinkId = :drinkId LIMIT 1")
     Drink getById(int drinkId);
 
+    @Query("DELETE FROM drinks WHERE drinkId = :id")
+    void deleteById(String id);
+
+
     @Delete
     void deleteDrink(Drink drink);
 

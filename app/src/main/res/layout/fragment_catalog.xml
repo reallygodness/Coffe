@@ -89,6 +89,7 @@
             android:textStyle="bold"
             android:background="@drawable/bg_category_tab"
             android:textColor="@color/white"
+            android:textSize="10dp"
             android:text="Кофе и напитки"/>
 
         <com.google.android.material.button.MaterialButton
@@ -100,6 +101,7 @@
             android:textColor="@color/white"
             android:textStyle="bold"
             android:layout_marginStart="16dp"
+            android:textSize="10dp"
             android:text="Блюда" />
 
         <com.google.android.material.button.MaterialButton
@@ -110,6 +112,7 @@
             android:background="@drawable/bg_category_tab"
             android:textColor="@color/white"
             android:textStyle="bold"
+            android:textSize="10dp"
             android:layout_marginStart="16dp"
             android:text="Десерты" />
     </LinearLayout>

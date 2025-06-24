@@ -110,7 +110,6 @@ public class ProductDetailActivity extends AppCompatActivity {
         // findViewById
         ImageView iv       = findViewById(R.id.detailImage);
         TextView tvTitle   = findViewById(R.id.detailTitle);
-        tvRating           = findViewById(R.id.detailRating);
         TextView tvDesc    = findViewById(R.id.detailDescription);
         tvSize             = findViewById(R.id.detailSize);
         tvLabelSize        = findViewById(R.id.labelSize);
@@ -131,7 +130,7 @@ public class ProductDetailActivity extends AppCompatActivity {
 
         // заполняем UI
         tvTitle.setText(item.getTitle());
-        tvRating.setText(String.format(Locale.getDefault(), "%.1f", item.getRating()));
+//        tvRating.setText(String.format(Locale.getDefault(), "%.1f", item.getRating()));
         tvDesc.setText(item.getDescription());
         Glide.with(this)
                 .load(item.getImageUrl())
@@ -174,30 +173,30 @@ public class ProductDetailActivity extends AppCompatActivity {
         isLoggedIn = AuthUtils.isLoggedIn(this);
         userId     = AuthUtils.getLoggedInUserId(this);
 
-        // лайвдата отзывов
-        LiveData<List<Review>> liveReviews;
-        switch (productType) {
-            case "drink":
-                liveReviews = db.reviewDAO().getReviewsForDrinkId(productId);
-                break;
-            case "dish":
-                liveReviews = db.reviewDAO().getReviewsForDishId(productId);
-                break;
-            default:
-                liveReviews = db.reviewDAO().getReviewsForDessertId(productId);
-                break;
-        }
-        liveReviews.observe(this, reviews -> {
-            if (reviews == null || reviews.isEmpty()) {
-                reviewSection.setVisibility(View.GONE);
-            } else {
-                reviewSection.setVisibility(View.VISIBLE);
-                reviewAdapter.submitList(reviews);
-                float sum = 0f;
-                for (Review r : reviews) sum += r.getRating();
-                tvRating.setText(String.format(Locale.getDefault(), "%.1f", sum / reviews.size()));
-            }
-        });
+//        // лайвдата отзывов
+//        LiveData<List<Review>> liveReviews;
+//        switch (productType) {
+//            case "drink":
+//                liveReviews = db.reviewDAO().getReviewsForDrinkId(productId);
+//                break;
+//            case "dish":
+//                liveReviews = db.reviewDAO().getReviewsForDishId(productId);
+//                break;
+//            default:
+//                liveReviews = db.reviewDAO().getReviewsForDessertId(productId);
+//                break;
+//        }
+//        liveReviews.observe(this, reviews -> {
+//            if (reviews == null || reviews.isEmpty()) {
+//                reviewSection.setVisibility(View.GONE);
+//            } else {
+//                reviewSection.setVisibility(View.VISIBLE);
+//                reviewAdapter.submitList(reviews);
+//                float sum = 0f;
+//                for (Review r : reviews) sum += r.getRating();
+//                tvRating.setText(String.format(Locale.getDefault(), "%.1f", sum / reviews.size()));
+//            }
+//        });
 
         // загрузка объёмов для напитков
         if ("drink".equals(productType)) {

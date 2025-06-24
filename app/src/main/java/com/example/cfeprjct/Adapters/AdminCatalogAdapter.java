@@ -1,5 +1,7 @@
 package com.example.cfeprjct.Adapters;
 
+import static androidx.core.content.ContentProviderCompat.requireContext;
+
 import android.content.Context;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
@@ -9,8 +11,10 @@ import android.widget.*;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.room.Room;
 
 import com.bumptech.glide.Glide;
+import com.example.cfeprjct.AppDatabase;
 import com.example.cfeprjct.R;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.Query;
@@ -29,12 +33,14 @@ public class AdminCatalogAdapter extends RecyclerView.Adapter<AdminCatalogAdapte
     private final Runnable onProductUpdated;
     private final Runnable onProductDeleted;
 
+
     public AdminCatalogAdapter(Context context, String category, Runnable onProductUpdated, Runnable onProductDeleted) {
         this.context = context;
         this.category = category;
         this.onProductUpdated = onProductUpdated;
         this.onProductDeleted = onProductDeleted;
     }
+
 
     // Поменять категорию
     public void setCategory(String category) {
@@ -267,26 +273,46 @@ public class AdminCatalogAdapter extends RecyclerView.Adapter<AdminCatalogAdapte
                 }
             });
 
-            // Кнопка "Удалить"
             holder.btnDelete.setOnClickListener(v -> {
                 int p = holder.getAdapterPosition();
                 if (id != null) {
                     FirebaseFirestore.getInstance().collection(category).document(id)
                             .delete()
                             .addOnSuccessListener(unused -> {
+                                // Удаляем из прайс-листа
                                 FirebaseFirestore.getInstance()
                                         .collection("price_list").document(category)
                                         .collection("items").document(id).delete();
+
+                                AppDatabase db = AppDatabase.getInstance(context);
+
+                                // Удаление из локальной базы данных
+                                new Thread(() -> {
+                                    switch (category) {
+                                        case "drinks":
+                                            db.drinkDAO().deleteById(id);
+                                            break;
+                                        case "dishes":
+                                            db.dishDAO().deleteById(id);
+                                            break;
+                                        case "desserts":
+                                            db.dessertDAO().deleteById(id);
+                                            break;
+                                    }
+                                }).start();
+
                                 Toast.makeText(context, "Товар удалён", Toast.LENGTH_SHORT).show();
                                 products.remove(p);
                                 notifyItemRemoved(p);
                                 if (onProductDeleted != null) onProductDeleted.run();
-                            });
+                            })
+                            .addOnFailureListener(e -> Toast.makeText(context, "Ошибка удаления: " + e.getMessage(), Toast.LENGTH_SHORT).show());
                 } else {
                     products.remove(p);
                     notifyItemRemoved(p);
                 }
             });
+
         }
     }
 

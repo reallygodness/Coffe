@@ -24,6 +24,10 @@ public interface DishDAO {
     @Delete
     void deleteDish(Dish dish);
 
+    @Query("DELETE FROM dishes WHERE dishId = :id")
+    void deleteById(String id);
+
+
     @Query("SELECT * FROM dishes WHERE dishId = :dishId LIMIT 1")
     Dish getById(int dishId);
 

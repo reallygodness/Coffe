@@ -65,15 +65,6 @@
                         android:textSize="20sp"
                         android:textStyle="bold"
                         android:textColor="#212121" />
-
-                    <TextView
-                        android:id="@+id/detailRating"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:drawableLeft="@drawable/ic_star"
-                        android:drawablePadding="4dp"
-                        android:textSize="14sp"
-                        android:textColor="#212121" />
                 </LinearLayout>
 
                 <!-- Разделитель + описание -->
